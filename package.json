@@ -1,0 +1,21 @@
+{
+  "name": "aerofoilpro",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/tailwind": "^6.0.2",
+    "astro": "^5.7.10",
+    "chart.js": "^4.4.9",
+    "chartjs-plugin-zoom": "^2.2.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.1"
+  }
+}
