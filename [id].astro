@@ -1,0 +1,745 @@
+---
+import airfoils from '../../data/airfoils.json';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  return Object.keys(airfoils).map((id) => ({ params: { id } }));
+}
+
+const { id } = Astro.params;
+const airfoil = airfoils[id];
+
+if (!airfoil) {
+  throw new Error(`Airfoil not found for ID: ${id}`);
+}
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{airfoil.name} – AeroFoilPro</title>
+    <meta name="description" content={airfoil.description} />
+    <meta property="og:title" content={`${airfoil.name} – AeroFoilPro`} />
+    <meta property="og:description" content={airfoil.description} />
+
+    <!-- Load Chart.js and related scripts in the correct order with defer -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.umd.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" />
+
+    <style>
+      #coordTable tbody tr:hover {
+        background-color: #fefcbf;
+        cursor: pointer;
+      }
+      .controls-container {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .chart-btn {
+        background-color: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .chart-btn:hover {
+        background-color: #e5e7eb;
+      }
+      .chart-container {
+        position: relative;
+        max-width: 700px;
+        height: 400px;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body class="p-6">
+    <a class="text-sm text-blue-500 underline" href="/">← Back to list</a>
+    <h1 class="text-3xl font-bold mt-2">{airfoil.name}</h1>
+    <p class="text-gray-600 mb-4">{airfoil.description}</p>
+
+    <div class="flex items-center gap-4 mb-4">
+      <button id="copyBtn" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">📋 Copy Coords</button>
+      <button id="downloadBtn" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">⬇️ Download CSV</button>
+    </div>
+
+    <!-- Chart controls -->
+    <div class="controls-container">
+      <button id="zoomIn" class="chart-btn">🔍+ Zoom In</button>
+      <button id="zoomOut" class="chart-btn">🔍- Zoom Out</button>
+      <button id="resetZoom" class="chart-btn">↩️ Reset View</button>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="airfoilChart"></canvas>
+    </div>
+
+    <div id="toast" class="fixed bottom-5 right-5 bg-black text-white text-sm px-4 py-2 rounded opacity-0 transition-opacity duration-300 pointer-events-none">
+      ✅ Coordinates copied!
+    </div>
+
+    <!-- 🧮 Coordinate Table with Search -->
+    <div class="mt-6" style="max-width: 700px;">
+      <input
+        type="text"
+        id="coordSearch"
+        placeholder="Search coordinate (e.g. 0.2000)"
+        class="mb-2 p-2 border rounded w-full text-sm"
+      />
+      <div id="scrollContainer" style="max-height: 300px; overflow-y: auto;">
+        <table id="coordTable" class="table-auto w-full text-sm text-left">
+          <thead class="sticky top-0 bg-gray-100 border-b">
+            <tr>
+              <th class="px-2 py-1 border-r cursor-pointer" data-sort="index"># <span class="sort-icon"></span></th>
+              <th class="px-2 py-1 border-r cursor-pointer" data-sort="x">x <span class="sort-icon"></span></th>
+              <th class="px-2 py-1 cursor-pointer" data-sort="y">y <span class="sort-icon"></span></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <style>
+      /* Styling for sort headers */
+      th[data-sort] {
+        position: relative;
+      }
+      th[data-sort]:hover {
+        background-color: #e5e7eb;
+      }
+      .sort-icon::after {
+        content: "⇅";
+        margin-left: 5px;
+        color: #9ca3af;
+        font-size: 0.8em;
+      }
+      th[data-sort].sort-asc .sort-icon::after {
+        content: "↑";
+        color: #1e3a8a;
+      }
+      th[data-sort].sort-desc .sort-icon::after {
+        content: "↓";
+        color: #1e3a8a;
+      }
+    </style>
+
+    <script type="application/json" id="airfoil-coords" set:html={JSON.stringify(airfoil.coordinates)}></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" defer></script>
+
+    <!-- Our main application script - loaded last -->
+    <script>
+      // Wait for all scripts to load before executing
+      document.addEventListener('DOMContentLoaded', function() {
+        // Verify Chart.js is loaded
+        if (typeof Chart === 'undefined') {
+          console.error('Chart.js is not loaded!');
+          return;
+        }
+
+        const coords = JSON.parse(document.getElementById('airfoil-coords').textContent);
+        
+        // Manual implementation of zooming
+        function zoomChart(chart, factor) {
+          const xAxis = chart.scales.x;
+          const yAxis = chart.scales.y;
+          
+          // Calculate center point
+          const centerX = (xAxis.min + xAxis.max) / 2;
+          const centerY = (yAxis.min + yAxis.max) / 2;
+          
+          // Calculate new range
+          const rangeX = (xAxis.max - xAxis.min) / factor;
+          const rangeY = (yAxis.max - yAxis.min) / factor;
+          
+          // Set new min and max values
+          chart.options.scales.x.min = centerX - rangeX / 2;
+          chart.options.scales.x.max = centerX + rangeX / 2;
+          chart.options.scales.y.min = centerY - rangeY / 2;
+          chart.options.scales.y.max = centerY + rangeY / 2;
+          
+          // Update the chart with new options
+          chart.update();
+        }
+        
+        // Reset zoom to default values
+        function resetZoom(chart) {
+          chart.options.scales.x.min = defaultScales.x.min;
+          chart.options.scales.x.max = defaultScales.x.max;
+          chart.options.scales.y.min = defaultScales.y.min;
+          chart.options.scales.y.max = defaultScales.y.max;
+          chart.update();
+        }
+        
+        // Create the chart
+        const setupChart = () => {
+          const chartCtx = document.getElementById('airfoilChart').getContext('2d');
+          const myChart = new Chart(chartCtx, {
+            type: 'scatter',
+            data: {
+              datasets: [{
+                label: 'Airfoil Profile',
+                data: coords.map(([x, y]) => ({ x, y })),
+                borderColor: 'black',
+                borderWidth: 1.5,
+                showLine: true,
+                fill: false,
+                tension: 0,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                pointBackgroundColor: 'black'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: { 
+                  title: { display: true, text: 'x' }, 
+                  min: 0, 
+                  max: 1,
+                  ticks: {
+                    maxTicksLimit: 11,
+                    precision: 1
+                  },
+                  grid: {
+                    display: true,
+                    drawOnChartArea: true
+                  }
+                },
+                y: { 
+                  beginAtZero: false, 
+                  title: { display: true, text: 'y', rotation: -90 }, 
+                  min: -0.2, 
+                  max: 0.2,
+                  ticks: {
+                    maxTicksLimit: 11,
+                    precision: 2
+                  },
+                  grid: {
+                    display: true,
+                    drawOnChartArea: true
+                  }
+                }
+              },
+              plugins: { 
+                legend: { display: false }
+              },
+              // Add double-click to zoom
+              dblClickSpeed: 350,
+              onHover: (e, elements) => {
+                document.querySelectorAll('#coordTable tbody tr').forEach(tr => tr.classList.remove('bg-yellow-100'));
+                if (elements.length > 0) {
+                  const index = elements[0].index;
+                  const row = document.querySelector(`#coordTable tbody tr:nth-child(${index + 1})`);
+                  if (row) {
+                    row.classList.add('bg-yellow-100');
+  
+                    const container = document.getElementById('scrollContainer');
+                    const rowOffsetTop = row.offsetTop;
+                    const offset = 29;
+                    container.scrollTo({
+                      top: rowOffsetTop - offset,
+                      behavior: 'smooth'
+                    });
+                  }
+                }
+              }
+            }
+          });
+          
+          return myChart;
+        };
+        
+        // Initialize the chart
+        const myChart = setupChart();
+        
+        // Default scale values
+        const defaultScales = {
+          x: { min: 0, max: 1 },
+          y: { min: -0.2, max: 0.2 }
+        };
+        
+        // Variables to track dragging state
+        let isDragging = false;
+        let dragStartX, dragStartY;
+        let lastScaleX, lastScaleY;
+        let lastRangeX, lastRangeY;
+
+        // Add mouse event listeners for dragging
+        const chartCanvas = document.getElementById('airfoilChart');
+
+        // Mouse down event - start dragging
+        chartCanvas.addEventListener('mousedown', (e) => {
+          isDragging = true;
+          dragStartX = e.offsetX;
+          dragStartY = e.offsetY;
+          
+          // Save current scales
+          lastScaleX = {
+            min: myChart.scales.x.min,
+            max: myChart.scales.x.max
+          };
+          lastScaleY = {
+            min: myChart.scales.y.min,
+            max: myChart.scales.y.max
+          };
+          
+          // Calculate ranges for reuse
+          lastRangeX = lastScaleX.max - lastScaleX.min;
+          lastRangeY = lastScaleY.max - lastScaleY.min;
+          
+          // Change cursor to indicate dragging
+          chartCanvas.style.cursor = 'grabbing';
+        });
+
+        // Mouse move event - update chart view during drag
+        window.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          
+          const rect = chartCanvas.getBoundingClientRect();
+          const offsetX = e.clientX - rect.left;
+          const offsetY = e.clientY - rect.top;
+          
+          // Calculate how much to move in data coordinates
+          const deltaX = (dragStartX - offsetX) / chartCanvas.width * lastRangeX;
+          const deltaY = (offsetY - dragStartY) / chartCanvas.height * lastRangeY;
+          
+          // Update chart scale with the new boundaries
+          myChart.options.scales.x.min = lastScaleX.min + deltaX;
+          myChart.options.scales.x.max = lastScaleX.max + deltaX;
+          myChart.options.scales.y.min = lastScaleY.min + deltaY;
+          myChart.options.scales.y.max = lastScaleY.max + deltaY;
+          
+          // Update the chart
+          myChart.update();
+        });
+
+        // Mouse up and mouse leave events - end dragging
+        window.addEventListener('mouseup', () => {
+          if (isDragging) {
+            isDragging = false;
+            chartCanvas.style.cursor = 'default';
+          }
+        });
+
+        chartCanvas.addEventListener('mouseleave', () => {
+          if (isDragging) {
+            isDragging = false;
+            chartCanvas.style.cursor = 'default';
+          }
+        });     
+
+        // Setup zoom buttons using our manual implementation
+        document.getElementById('zoomIn').addEventListener('click', () => {
+          zoomChart(myChart, 1.2); // Zoom in by 20%
+        });
+        
+        document.getElementById('zoomOut').addEventListener('click', () => {
+          zoomChart(myChart, 0.8); // Zoom out by 20%
+        });
+        
+        document.getElementById('resetZoom').addEventListener('click', () => {
+          resetZoom(myChart);
+        });
+        
+        // Add double click to zoom functionality
+        chartCanvas.addEventListener('dblclick', (e) => {
+          // Get current scale values
+          const xAxis = myChart.scales.x;
+          const yAxis = myChart.scales.y;
+          
+          // Get mouse position
+          const rect = chartCanvas.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          
+          // Convert to relative position within chart (0-1)
+          const relativeX = mouseX / chartCanvas.width;
+          const relativeY = mouseY / chartCanvas.height;
+          
+          // Convert to data values
+          const mouseXValue = xAxis.min + (xAxis.max - xAxis.min) * relativeX;
+          const mouseYValue = yAxis.max - (yAxis.max - yAxis.min) * relativeY;
+          
+          // Calculate new ranges (zoom in by 70%)
+          const zoomFactor = 1.7;
+          const newRangeX = (xAxis.max - xAxis.min) / zoomFactor;
+          const newRangeY = (yAxis.max - yAxis.min) / zoomFactor;
+          
+          // Update chart with new boundaries centered on click
+          myChart.options.scales.x.min = mouseXValue - newRangeX * relativeX;
+          myChart.options.scales.x.max = mouseXValue + newRangeX * (1 - relativeX);
+          myChart.options.scales.y.min = mouseYValue - newRangeY * (1 - relativeY);
+          myChart.options.scales.y.max = mouseYValue + newRangeY * relativeY;
+          
+          myChart.update();
+        });
+        
+        // Mouse wheel zoom with anchor at cursor position
+        chartCanvas.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          
+          // Determine zoom factor based on wheel direction - reduced sensitivity
+          const factor = e.deltaY < 0 ? 1.05 : 0.95; // Reduced from 1.1/0.9 to 1.05/0.95
+          
+          // Get current scale values
+          const xAxis = myChart.scales.x;
+          const yAxis = myChart.scales.y;
+          
+          // Get mouse position within canvas
+          const rect = chartCanvas.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          
+          // Convert mouse position to relative position within the chart (0-1)
+          const relativeX = (mouseX / chartCanvas.width);
+          const relativeY = (mouseY / chartCanvas.height);
+          
+          // Convert relative position to actual value on the axis
+          const mouseXValue = xAxis.min + (xAxis.max - xAxis.min) * relativeX;
+          const mouseYValue = yAxis.max - (yAxis.max - yAxis.min) * relativeY;
+          
+          // Calculate new ranges after zooming
+          const newRangeX = (xAxis.max - xAxis.min) / factor;
+          const newRangeY = (yAxis.max - yAxis.min) / factor;
+          
+          // Calculate new min/max values with mouse position as the focal point
+          myChart.options.scales.x.min = mouseXValue - newRangeX * relativeX;
+          myChart.options.scales.x.max = mouseXValue + newRangeX * (1 - relativeX);
+          myChart.options.scales.y.min = mouseYValue - newRangeY * (1 - relativeY);
+          myChart.options.scales.y.max = mouseYValue + newRangeY * relativeY;
+          
+          // Update the chart
+          myChart.update();
+        });
+        
+        // Add touch support for mobile devices and touch screens
+        if ('ontouchstart' in window) {
+          let touchStartX, touchStartY;
+          let touchLastScaleX, touchLastScaleY;
+          let touchLastRangeX, touchLastRangeY;
+          let isPinching = false;
+          let initialDistance = 0;
+          let lastTapTime = 0;
+          
+          // Touch start - begin drag or pinch
+          chartCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTapTime;
+            
+            // Check for double tap (double click equivalent)
+            if (tapLength < 500 && tapLength > 0 && e.touches.length === 1) {
+              // Double tap detected - implement zoom in
+              const touch = e.touches[0];
+              const rect = chartCanvas.getBoundingClientRect();
+              const touchX = touch.clientX - rect.left;
+              const touchY = touch.clientY - rect.top;
+              
+              // Convert touch position to data values
+              const relativeX = touchX / chartCanvas.width;
+              const relativeY = touchY / chartCanvas.height;
+              const xAxis = myChart.scales.x;
+              const yAxis = myChart.scales.y;
+              
+              const touchXValue = xAxis.min + (xAxis.max - xAxis.min) * relativeX;
+              const touchYValue = yAxis.max - (yAxis.max - yAxis.min) * relativeY;
+              
+              // Zoom in by 50% with the touch point as center
+              const zoomFactor = 1.5;
+              const newRangeX = (xAxis.max - xAxis.min) / zoomFactor;
+              const newRangeY = (yAxis.max - yAxis.min) / zoomFactor;
+              
+              myChart.options.scales.x.min = touchXValue - newRangeX * relativeX;
+              myChart.options.scales.x.max = touchXValue + newRangeX * (1 - relativeX);
+              myChart.options.scales.y.min = touchYValue - newRangeY * (1 - relativeY);
+              myChart.options.scales.y.max = touchYValue + newRangeY * relativeY;
+              
+              myChart.update();
+              
+              // Reset tap timer to prevent triple-tap issues
+              lastTapTime = 0;
+            } else {
+              // Normal single tap - record for potential double tap detection
+              lastTapTime = currentTime;
+              
+              if (e.touches.length === 1) {
+                // Single touch - prepare for dragging
+                const touch = e.touches[0];
+                const rect = chartCanvas.getBoundingClientRect();
+                touchStartX = touch.clientX - rect.left;
+                touchStartY = touch.clientY - rect.top;
+                
+                touchLastScaleX = {
+                  min: myChart.scales.x.min,
+                  max: myChart.scales.x.max
+                };
+                touchLastScaleY = {
+                  min: myChart.scales.y.min,
+                  max: myChart.scales.y.max
+                };
+                
+                touchLastRangeX = touchLastScaleX.max - touchLastScaleX.min;
+                touchLastRangeY = touchLastScaleY.max - touchLastScaleY.min;
+              } 
+              else if (e.touches.length === 2) {
+                // Two touches - prepare for pinch zoom
+                isPinching = true;
+                
+                // Calculate distance between fingers
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                initialDistance = Math.hypot(
+                  touch2.clientX - touch1.clientX,
+                  touch2.clientY - touch1.clientY
+                );
+                
+                // Center point between fingers
+                const centerX = (touch1.clientX + touch2.clientX) / 2;
+                const centerY = (touch1.clientY + touch2.clientY) / 2;
+                const rect = chartCanvas.getBoundingClientRect();
+                
+                // Convert to relative position
+                const relativeX = (centerX - rect.left) / chartCanvas.width;
+                const relativeY = (centerY - rect.top) / chartCanvas.height;
+                
+                // Save current state
+                touchLastScaleX = {
+                  min: myChart.scales.x.min,
+                  max: myChart.scales.x.max
+                };
+                touchLastScaleY = {
+                  min: myChart.scales.y.min,
+                  max: myChart.scales.y.max
+                };
+                
+                touchLastRangeX = touchLastScaleX.max - touchLastScaleX.min;
+                touchLastRangeY = touchLastScaleY.max - touchLastScaleY.min;
+              }
+            }
+          });
+          
+          // Touch move - handle drag or pinch
+          chartCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            
+            if (e.touches.length === 1 && !isPinching) {
+              // Single touch - dragging
+              const touch = e.touches[0];
+              const rect = chartCanvas.getBoundingClientRect();
+              const currentX = touch.clientX - rect.left;
+              const currentY = touch.clientY - rect.top;
+              
+              // Calculate how much to move
+              const deltaX = (touchStartX - currentX) / chartCanvas.width * touchLastRangeX;
+              const deltaY = (currentY - touchStartY) / chartCanvas.height * touchLastRangeY;
+              
+              // Update chart scale
+              myChart.options.scales.x.min = touchLastScaleX.min + deltaX;
+              myChart.options.scales.x.max = touchLastScaleX.max + deltaX;
+              myChart.options.scales.y.min = touchLastScaleY.min + deltaY;
+              myChart.options.scales.y.max = touchLastScaleY.max + deltaY;
+              
+              myChart.update();
+            } 
+            else if (e.touches.length === 2) {
+              // Two touches - pinch zooming
+              const touch1 = e.touches[0];
+              const touch2 = e.touches[1];
+              
+              // Calculate new distance between fingers
+              const currentDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+              );
+              
+              // Calculate zoom factor based on finger distance change
+              // Limit the rate of change to avoid overly sensitive response
+              const rawFactor = currentDistance / initialDistance;
+              // Dampen the pinch zoom effect for better control
+              const factor = rawFactor > 1 ? 
+                1 + (rawFactor - 1) * 0.8 : // Zoom in is dampened
+                1 - (1 - rawFactor) * 0.8;  // Zoom out is dampened
+              
+              // Center point between fingers
+              const centerX = (touch1.clientX + touch2.clientX) / 2;
+              const centerY = (touch1.clientY + touch2.clientY) / 2;
+              const rect = chartCanvas.getBoundingClientRect();
+              
+              // Convert to relative position within chart
+              const relativeX = (centerX - rect.left) / chartCanvas.width;
+              const relativeY = (centerY - rect.top) / chartCanvas.height;
+              
+              // Convert to data values
+              const centerXValue = touchLastScaleX.min + touchLastRangeX * relativeX;
+              const centerYValue = touchLastScaleY.max - touchLastRangeY * relativeY;
+              
+              // Calculate new range
+              const newRangeX = touchLastRangeX / factor;
+              const newRangeY = touchLastRangeY / factor;
+              
+              // Update chart scale with pinch center as focal point
+              myChart.options.scales.x.min = centerXValue - newRangeX * relativeX;
+              myChart.options.scales.x.max = centerXValue + newRangeX * (1 - relativeX);
+              myChart.options.scales.y.min = centerYValue - newRangeY * (1 - relativeY);
+              myChart.options.scales.y.max = centerYValue + newRangeY * relativeY;
+              
+              myChart.update();
+            }
+          });
+          
+          // Touch end - reset states
+          chartCanvas.addEventListener('touchend', () => {
+            isPinching = false;
+          });
+          
+          chartCanvas.addEventListener('touchcancel', () => {
+            isPinching = false;
+          });
+        }
+
+        // Copy coordinates as CSV
+        document.getElementById('copyBtn')?.addEventListener('click', () => {
+          const csv = 'x,y\n' + coords.map(([x, y]) => `${x},${y}`).join('\n');
+          navigator.clipboard.writeText(csv).then(() => {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+              toast.classList.remove('opacity-100');
+              toast.classList.add('opacity-0');
+            }, 2000);
+          }).catch(() => alert("Failed to copy. Your browser may not support clipboard operations."));
+        });
+
+        // Download coordinates as CSV
+        document.getElementById('downloadBtn')?.addEventListener('click', () => {
+          const csv = 'x,y\n' + coords.map(([x, y]) => `${x},${y}`).join('\n');
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${document.title.split(' –')[0].toLowerCase().replace(/\s+/g, '-')}.csv`;
+          document.body.appendChild(a); // Needed for Firefox
+          a.click();
+          document.body.removeChild(a); // Clean up
+          URL.revokeObjectURL(url);
+        });
+
+        // Populate the coordinate table
+        const tbody = document.querySelector('#coordTable tbody');
+        coords.forEach(([x, y], i) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td class="px-2 py-1 border">${i + 1}</td>
+            <td class="px-2 py-1 border">${x.toFixed(4)}</td>
+            <td class="px-2 py-1 border">${y.toFixed(4)}</td>
+          `;
+          row.addEventListener('mouseenter', () => {
+            row.classList.add('bg-yellow-100');
+            myChart.setActiveElements([{ datasetIndex: 0, index: i }]);
+            myChart.tooltip.setActiveElements([{ datasetIndex: 0, index: i }], { x: 0, y: 0 });
+            myChart.update();
+          });
+          row.addEventListener('mouseleave', () => {
+            row.classList.remove('bg-yellow-100');
+            myChart.setActiveElements([]);
+            myChart.tooltip.setActiveElements([], { x: 0, y: 0 });
+            myChart.update();
+          });
+          row.addEventListener('click', () => {
+            // Center the chart view on the selected point
+            const x = coords[i][0];
+            const y = coords[i][1];
+            const xRange = myChart.scales.x.max - myChart.scales.x.min;
+            const yRange = myChart.scales.y.max - myChart.scales.y.min;
+            
+            myChart.options.scales.x.min = x - xRange/4;
+            myChart.options.scales.x.max = x + xRange/4;
+            myChart.options.scales.y.min = y - yRange/4;
+            myChart.options.scales.y.max = y + yRange/4;
+            myChart.update();
+          });
+          tbody.appendChild(row);
+        });
+
+        // Implement sorting functionality
+        const headers = document.querySelectorAll('#coordTable th[data-sort]');
+        let currentSort = { column: null, direction: 'asc' };
+
+        headers.forEach(header => {
+          header.addEventListener('click', () => {
+            const column = header.getAttribute('data-sort');
+            const rows = Array.from(document.querySelectorAll('#coordTable tbody tr'));
+            
+            // Reset all headers
+            headers.forEach(h => {
+              h.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Determine sort direction
+            let direction = 'asc';
+            if (currentSort.column === column && currentSort.direction === 'asc') {
+              direction = 'desc';
+            }
+            
+            // Update sort state
+            currentSort = { column, direction };
+            
+            // Add appropriate class to the header
+            header.classList.add(`sort-${direction}`);
+            
+            // Sort the rows
+            rows.sort((a, b) => {
+              let aValue, bValue;
+              
+              if (column === 'index') {
+                aValue = parseInt(a.cells[0].textContent);
+                bValue = parseInt(b.cells[0].textContent);
+              } else if (column === 'x') {
+                aValue = parseFloat(a.cells[1].textContent);
+                bValue = parseFloat(b.cells[1].textContent);
+              } else if (column === 'y') {
+                aValue = parseFloat(a.cells[2].textContent);
+                bValue = parseFloat(b.cells[2].textContent);
+              }
+              
+              return direction === 'asc' 
+                ? aValue - bValue 
+                : bValue - aValue;
+            });
+            
+            // Remove all existing rows
+            while (tbody.firstChild) {
+              tbody.removeChild(tbody.firstChild);
+            }
+            
+            // Add sorted rows back to the table
+            rows.forEach(row => tbody.appendChild(row));
+          });
+        });
+
+        // Coordinate search functionality
+        const searchInput = document.getElementById('coordSearch');
+        searchInput.addEventListener('input', () => {
+          const term = searchInput.value.trim().toLowerCase();
+          document.querySelectorAll('#coordTable tbody tr').forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(term) ? '' : 'none';
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
