@@ -1,0 +1,258 @@
+---
+export interface Props {
+  name: string;
+}
+
+const { name } = Astro.props;
+
+// Sample performance data - in a real implementation, this would come from your data source
+const performanceData = {
+  reynoldsNumbers: ["1,000,000", "2,000,000", "5,000,000"],
+  maxLiftCoef: 1.45,
+  stallAngle: "16°",
+  maxLiftDragRatio: 85,
+  momentCoef: -0.025,
+  zeroLiftAngle: "-2.0°",
+  liftCurveSlope: 0.108
+};
+---
+
+<div class="bg-white rounded-lg shadow-sm mb-6" id="performance-content">
+  <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+    <h2 class="text-lg font-medium text-gray-900">Performance Characteristics</h2>
+    
+    <div class="flex">
+      <select id="reynoldsSelect" class="text-sm border-gray-300 rounded-md mr-2">
+        {performanceData.reynoldsNumbers.map((re, i) => (
+          <option value={re} selected={i === 0}>Re = {re}</option>
+        ))}
+      </select>
+      
+      <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+        <span class="flex items-center">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Export Data
+        </span>
+      </button>
+    </div>
+  </div>
+  
+  <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Performance Graphs -->
+    <div>
+      <div class="mb-6">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Lift Coefficient vs. Angle of Attack</h3>
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 h-64">
+          <canvas id="liftChart" class="w-full h-full"></canvas>
+        </div>
+      </div>
+      
+      <div>
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Lift/Drag Ratio vs. Angle of Attack</h3>
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 h-64">
+          <canvas id="liftDragChart" class="w-full h-full"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Performance Metrics & Analysis -->
+    <div>
+      <h3 class="text-sm font-medium text-gray-700 mb-2">Key Performance Metrics</h3>
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+        <dl class="grid grid-cols-2 gap-x-4 gap-y-3">
+          <div>
+            <dt class="text-xs text-gray-500">Maximum Lift Coefficient (CL max)</dt>
+            <dd class="text-lg font-medium text-gray-900">{performanceData.maxLiftCoef}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500">Stall Angle</dt>
+            <dd class="text-lg font-medium text-gray-900">{performanceData.stallAngle}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500">Maximum L/D Ratio</dt>
+            <dd class="text-lg font-medium text-gray-900">{performanceData.maxLiftDragRatio}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500">Moment Coefficient (Cm)</dt>
+            <dd class="text-lg font-medium text-gray-900">{performanceData.momentCoef}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500">Zero-Lift Angle</dt>
+            <dd class="text-lg font-medium text-gray-900">{performanceData.zeroLiftAngle}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500">Lift Curve Slope (per degree)</dt>
+            <dd class="text-lg font-medium text-gray-900">{performanceData.liftCurveSlope}</dd>
+          </div>
+        </dl>
+      </div>
+      
+      <h3 class="text-sm font-medium text-gray-700 mb-2">Performance Analysis</h3>
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-600 space-y-3">
+        <p>
+          The {name} exhibits good lift characteristics with a maximum coefficient of lift of {performanceData.maxLiftCoef} 
+          at a Reynolds number of {performanceData.reynoldsNumbers[0]}.
+        </p>
+        <p>
+          With a stall angle of {performanceData.stallAngle}, this airfoil provides a moderate margin of safety 
+          before stall occurs. The stall behavior is generally gentle, making it suitable for 
+          applications where predictable behavior at high angles of attack is important.
+        </p>
+        <p>
+          The maximum lift-to-drag ratio of {performanceData.maxLiftDragRatio} indicates good aerodynamic efficiency,
+          making this airfoil a solid choice for applications where range or endurance is a priority.
+        </p>
+        <p>
+          With a moment coefficient of {performanceData.momentCoef}, the airfoil exhibits moderate 
+          nose-down pitching moment, which should be considered in aircraft design and stability analysis.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Sample data for charts
+    const chartData = {
+      angles: [-6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14, 16, 18],
+      liftCoefs: [-0.3, -0.1, 0.1, 0.3, 0.5, 0.7, 0.9, 1.05, 1.2, 1.35, 1.42, 1.45, 1.3],
+      ldRatios: [10, 25, 45, 65, 80, 85, 82, 75, 65, 50, 35, 22, 12]
+    };
+    
+    // Create Lift vs. AOA Chart
+    const createLiftChart = () => {
+      const ctx = document.getElementById('liftChart');
+      if (!ctx || !(ctx instanceof HTMLCanvasElement)) return;
+      
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartData.angles.map(angle => `${angle}°`),
+          datasets: [{
+            label: 'Lift Coefficient (CL)',
+            data: chartData.liftCoefs,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Angle of Attack (α)'
+              },
+              grid: {
+                display: true,
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Lift Coefficient (CL)'
+              },
+              grid: {
+                display: true,
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  return `CL: ${context.parsed.y.toFixed(2)}`;
+                }
+              }
+            }
+          }
+        }
+      });
+    };
+    
+    // Create L/D Ratio vs. AOA Chart
+    const createLiftDragChart = () => {
+      const ctx = document.getElementById('liftDragChart');
+      if (!ctx || !(ctx instanceof HTMLCanvasElement)) return;
+      
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartData.angles.map(angle => `${angle}°`),
+          datasets: [{
+            label: 'Lift-to-Drag Ratio (L/D)',
+            data: chartData.ldRatios,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Angle of Attack (α)'
+              },
+              grid: {
+                display: true,
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Lift-to-Drag Ratio (L/D)'
+              },
+              grid: {
+                display: true,
+                color: 'rgba(0, 0, 0, 0.05)'
+              },
+              suggestedMin: 0
+            }
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  return `L/D: ${context.parsed.y.toFixed(1)}`;
+                }
+              }
+            }
+          }
+        }
+      });
+    };
+    
+    // Reynolds number selector functionality
+    document.getElementById('reynoldsSelect')?.addEventListener('change', (e) => {
+      const target = e.target as HTMLSelectElement;
+      console.log(`Selected Reynolds number: ${target.value}`);
+      // Here you would update the charts and metrics based on the selected Reynolds number
+      // This would require fetching new data or having pre-loaded data for different Re values
+    });
+    
+    // Initialize the charts
+    createLiftChart();
+    createLiftDragChart();
+  });
+</script>

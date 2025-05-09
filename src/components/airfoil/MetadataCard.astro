@@ -1,0 +1,102 @@
+---
+export interface Props {
+  name: string;
+  // Add other metadata properties as needed
+}
+
+const { name } = Astro.props;
+
+// Sample data - in a real implementation, these would come from your data source
+const metadata = {
+  family: "NACA 4-digit",
+  designer: "National Advisory Committee for Aeronautics",
+  year: "1932",
+  category: "Low-speed general aviation",
+  applications: ["Light aircraft", "UAVs", "Model aircraft"],
+  tags: ["Symmetric", "Low Reynolds", "High Lift"]
+};
+---
+
+<div class="bg-white rounded-lg shadow-sm mb-6">
+  <div class="p-4 border-b border-gray-200">
+    <h2 class="text-lg font-medium text-gray-900">Airfoil Information</h2>
+  </div>
+  
+  <div class="p-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <h3 class="text-sm font-medium text-gray-700 mb-3">General Information</h3>
+        <dl class="space-y-2">
+          <div class="flex justify-between">
+            <dt class="text-gray-600">Family:</dt>
+            <dd class="font-medium text-gray-900">{metadata.family}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-gray-600">Designer:</dt>
+            <dd class="font-medium text-gray-900">{metadata.designer}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-gray-600">Year:</dt>
+            <dd class="font-medium text-gray-900">{metadata.year}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-gray-600">Category:</dt>
+            <dd class="font-medium text-gray-900">{metadata.category}</dd>
+          </div>
+        </dl>
+      </div>
+      
+      <div>
+        <h3 class="text-sm font-medium text-gray-700 mb-3">Applications</h3>
+        <div class="flex flex-wrap gap-2">
+          {metadata.applications.map(app => (
+            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+              {app}
+            </span>
+          ))}
+        </div>
+        
+        <h3 class="text-sm font-medium text-gray-700 mt-4 mb-2">Tags</h3>
+        <div class="flex flex-wrap gap-2">
+          {metadata.tags.map(tag => (
+            <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+    
+    <div class="mt-6">
+      <h3 class="text-sm font-medium text-gray-700 mb-3">Description</h3>
+      <p class="text-gray-600">
+        The {name} is a classic airfoil from the NACA 4-digit series. It features a maximum thickness 
+        of 12% at 30% chord and a maximum camber of 2% at 40% chord. This airfoil offers a good 
+        balance of lift, drag, and stall characteristics, making it suitable for a variety of 
+        applications, particularly in general aviation and UAVs operating at low to moderate Reynolds 
+        numbers. Its gentle stall behavior makes it forgiving for pilots.
+      </p>
+    </div>
+    
+    <div class="mt-4 pt-4 border-t border-gray-200">
+      <h3 class="text-sm font-medium text-gray-700 mb-2">Resources</h3>
+      <ul class="list-disc list-inside space-y-1 text-gray-600">
+        <li>
+          <a href="#" class="text-blue-600 hover:text-blue-800">
+            UIUC Airfoil Database Entry
+          </a>
+        </li>
+        <li>
+          <a href="#" class="text-blue-600 hover:text-blue-800">
+            Airfoil Tools Analysis
+          </a>
+        </li>
+        <li>
+          <a href="#" class="text-blue-600 hover:text-blue-800">
+            Original NACA Technical Report
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

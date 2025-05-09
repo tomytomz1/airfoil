@@ -1,0 +1,68 @@
+---
+export interface Props {
+  name: string;
+  description: string;
+}
+
+const { name, description } = Astro.props;
+---
+
+<div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+  <a href="/" class="text-sm text-blue-500 hover:text-blue-700 mb-2 inline-block">
+    ← Back to all airfoils
+  </a>
+  <div class="flex flex-col md:flex-row md:items-start md:justify-between">
+    <div class="mb-4 md:mb-0">
+      <h1 class="text-3xl font-bold text-gray-900">{name}</h1>
+      <p class="text-gray-600 mt-1 max-w-3xl">{description}</p>
+    </div>
+    <div class="flex space-x-3">
+      <button class="bg-blue-600 text-white px-4 py-2 rounded flex items-center text-sm hover:bg-blue-700">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+        </svg>
+        Download
+      </button>
+      <button id="toggleFavorite" class="bg-gray-100 text-gray-700 px-4 py-2 rounded flex items-center text-sm hover:bg-gray-200">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+        </svg>
+        Add to Favorites
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Toggle favorite logic can be added here
+  document.getElementById('toggleFavorite')?.addEventListener('click', (e) => {
+    const target = e.currentTarget as HTMLButtonElement;
+    const isFavorite = target.classList.contains('bg-red-100');
+    
+    if (isFavorite) {
+      target.classList.remove('bg-red-100', 'text-red-700');
+      target.classList.add('bg-gray-100', 'text-gray-700');
+      target.querySelector('svg')?.classList.remove('text-red-500', 'fill-current');
+      target.querySelector('svg')?.classList.add('text-gray-500');
+      target.innerHTML = `
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+        </svg>
+        Add to Favorites
+      `;
+    } else {
+      target.classList.remove('bg-gray-100', 'text-gray-700');
+      target.classList.add('bg-red-100', 'text-red-700');
+      target.querySelector('svg')?.classList.remove('text-gray-500');
+      target.querySelector('svg')?.classList.add('text-red-500', 'fill-current');
+      target.innerHTML = `
+        <svg class="w-4 h-4 mr-2 text-red-500 fill-current" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+        </svg>
+        Favorited
+      `;
+    }
+    
+    // TODO: Store favorite status in localStorage
+  });
+</script>

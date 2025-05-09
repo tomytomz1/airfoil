@@ -1,0 +1,333 @@
+---
+export interface Props {
+  name: string;
+}
+
+const { name } = Astro.props;
+
+// Sample Reynolds number options - in a real implementation, this would come from your data source
+const reynoldsNumbers = ["1,000,000", "2,000,000", "5,000,000"];
+---
+
+<div class="bg-white rounded-lg shadow-sm mb-6" id="polar-content">
+  <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+    <h2 class="text-lg font-medium text-gray-900">Drag Polar</h2>
+    
+    <div class="flex">
+      <select id="polarReynoldsSelect" class="text-sm border-gray-300 rounded-md mr-2">
+        {reynoldsNumbers.map((re, i) => (
+          <option value={re} selected={i === 0}>Re = {re}</option>
+        ))}
+      </select>
+      
+      <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+        <span class="flex items-center">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Export Data
+        </span>
+      </button>
+    </div>
+  </div>
+  
+  <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Drag Polar Chart -->
+    <div>
+      <div class="mb-4">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">CL vs. CD</h3>
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 h-80">
+          <canvas id="dragPolarChart" class="w-full h-full"></canvas>
+        </div>
+      </div>
+      
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
+        <h4 class="font-medium text-gray-700 mb-2">Analysis Notes</h4>
+        <ul class="list-disc list-inside space-y-1 text-gray-600">
+          <li>Data generated using XFOIL panel method</li>
+          <li>Ncrit = 9 (standard atmospheric turbulence)</li>
+          <li>Mach = 0.0 (incompressible flow)</li>
+          <li>Transitions fixed: Top 0.0, Bottom 0.0</li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- Drag Breakdown & Data Table -->
+    <div>
+      <h3 class="text-sm font-medium text-gray-700 mb-2">Drag Breakdown</h3>
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 h-80">
+        <canvas id="dragBreakdownChart" class="w-full h-full"></canvas>
+      </div>
+      
+      <div class="mt-4">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Polar Data Table</h3>
+        <div class="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+          <div class="max-h-64 overflow-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-100 sticky top-0">
+                <tr>
+                  <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">Alpha</th>
+                  <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">CL</th>
+                  <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">CD</th>
+                  <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">CDp</th>
+                  <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase">CM</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">-6.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.3034</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.01221</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00624</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0246</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">-4.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.1037</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00798</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00452</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0249</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">-2.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.0958</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00684</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00386</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0251</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">0.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.2946</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00659</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00345</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0251</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">2.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.4922</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00664</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00326</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0250</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">4.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.6877</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00704</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00325</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0248</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">6.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.8803</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00787</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00358</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0245</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">8.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">1.0652</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00926</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00442</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0239</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">10.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">1.2312</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.01164</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.00647</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0228</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">12.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">1.3546</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.01546</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.01001</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0205</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">14.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">1.4236</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.02143</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.01548</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0175</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">16.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">1.4511</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.02948</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.02318</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0143</td>
+                </tr>
+                <tr>
+                  <td class="px-3 py-1.5 text-gray-900">18.0°</td>
+                  <td class="px-3 py-1.5 text-gray-900">1.3014</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.04123</td>
+                  <td class="px-3 py-1.5 text-gray-900">0.03418</td>
+                  <td class="px-3 py-1.5 text-gray-900">-0.0254</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Sample data for drag polar chart
+    const polarData = {
+      cl: [-0.3034, -0.1037, 0.0958, 0.2946, 0.4922, 0.6877, 0.8803, 1.0652, 1.2312, 1.3546, 1.4236, 1.4511, 1.3014],
+      cd: [0.01221, 0.00798, 0.00684, 0.00659, 0.00664, 0.00704, 0.00787, 0.00926, 0.01164, 0.01546, 0.02143, 0.02948, 0.04123],
+      cdp: [0.00624, 0.00452, 0.00386, 0.00345, 0.00326, 0.00325, 0.00358, 0.00442, 0.00647, 0.01001, 0.01548, 0.02318, 0.03418],
+      cdf: [0.00597, 0.00346, 0.00298, 0.00314, 0.00338, 0.00379, 0.00429, 0.00484, 0.00517, 0.00545, 0.00595, 0.00630, 0.00705]
+    };
+    
+    // Create Drag Polar Chart
+    const createDragPolarChart = () => {
+      const ctx = document.getElementById('dragPolarChart');
+      if (!ctx || !(ctx instanceof HTMLCanvasElement)) return;
+      
+      new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Drag Polar',
+            data: polarData.cl.map((cl, i) => ({ x: polarData.cd[i], y: cl })),
+            borderColor: '#3b82f6',
+            backgroundColor: '#3b82f6',
+            pointRadius: 4,
+            showLine: true,
+            tension: 0.2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+              title: {
+                display: true,
+                text: 'Drag Coefficient (CD)'
+              },
+              min: 0,
+              ticks: {
+                callback: function(value) {
+                  return value.toFixed(3);
+                }
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Lift Coefficient (CL)'
+              }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  const index = context.dataIndex;
+                  return [
+                    `CD: ${polarData.cd[index].toFixed(5)}`,
+                    `CL: ${polarData.cl[index].toFixed(5)}`,
+                    `L/D: ${(polarData.cl[index] / polarData.cd[index]).toFixed(2)}`
+                  ];
+                }
+              }
+            }
+          }
+        }
+      });
+    };
+    
+    // Create Drag Breakdown Chart
+    const createDragBreakdownChart = () => {
+      const ctx = document.getElementById('dragBreakdownChart');
+      if (!ctx || !(ctx instanceof HTMLCanvasElement)) return;
+      
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: polarData.cl.map((cl, i) => `${(Math.atan(cl / 10) * 180 / Math.PI).toFixed(1)}°`),
+          datasets: [
+            {
+              label: 'Pressure Drag',
+              data: polarData.cdp,
+              backgroundColor: 'rgba(59, 130, 246, 0.7)',
+              stack: 'Stack 0'
+            },
+            {
+              label: 'Friction Drag',
+              data: polarData.cdf,
+              backgroundColor: 'rgba(16, 185, 129, 0.7)',
+              stack: 'Stack 0'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Angle of Attack (α)'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Drag Coefficient Components'
+              },
+              min: 0,
+              ticks: {
+                callback: function(value) {
+                  return value.toFixed(3);
+                }
+              }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                title: (tooltipItems) => {
+                  const index = tooltipItems[0].dataIndex;
+                  return `Alpha: ${(Math.atan(polarData.cl[index] / 10) * 180 / Math.PI).toFixed(1)}°`;
+                },
+                label: (context) => {
+                  const index = context.dataIndex;
+                  if (context.datasetIndex === 0) {
+                    return `Pressure Drag: ${polarData.cdp[index].toFixed(5)}`;
+                  } else {
+                    return `Friction Drag: ${polarData.cdf[index].toFixed(5)}`;
+                  }
+                },
+                footer: (tooltipItems) => {
+                  const index = tooltipItems[0].dataIndex;
+                  return `Total Drag: ${polarData.cd[index].toFixed(5)}`;
+                }
+              }
+            }
+          }
+        }
+      });
+    };
+    
+    // Reynolds number selector functionality
+    document.getElementById('polarReynoldsSelect')?.addEventListener('change', (e) => {
+      const target = e.target as HTMLSelectElement;
+      console.log(`Selected Reynolds number: ${target.value}`);
+      // Here you would update the charts and data table based on the selected Reynolds number
+      // This would require fetching new data or having pre-loaded data for different Re values
+    });
+    
+    // Initialize charts
+    createDragPolarChart();
+    createDragBreakdownChart();
+  });
+</script>

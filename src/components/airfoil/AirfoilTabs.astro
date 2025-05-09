@@ -1,0 +1,77 @@
+---
+// Define tabs and their corresponding content IDs
+const tabs = [
+  { id: "geometry", label: "Geometry" },
+  { id: "performance", label: "Performance" },
+  { id: "polar", label: "Drag Polar" },
+  { id: "structural", label: "Structural" },
+  { id: "3d", label: "3D Model" }
+];
+---
+
+<div class="mb-6">
+  <div class="border-b border-gray-200">
+    <nav class="flex overflow-x-auto" aria-label="Tabs">
+      {tabs.map((tab, index) => (
+        <button
+          class={`airfoil-tab py-3 px-4 text-sm font-medium border-b-2 ${index === 0 ? 'active border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'}`}
+          data-tab={tab.id}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </nav>
+  </div>
+</div>
+
+<script>
+  // Tab switching functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.airfoil-tab');
+    const contentSections = document.querySelectorAll('.airfoil-tab-content');
+    
+    function activateTab(tabId: string) {
+      // Update tab buttons
+      tabs.forEach(tab => {
+        if (tab.getAttribute('data-tab') === tabId) {
+          tab.classList.add('active', 'border-blue-600', 'text-blue-600');
+          tab.classList.remove('border-transparent', 'text-gray-600');
+        } else {
+          tab.classList.remove('active', 'border-blue-600', 'text-blue-600');
+          tab.classList.add('border-transparent', 'text-gray-600');
+        }
+      });
+      
+      // Update content sections
+      contentSections.forEach(section => {
+        if (section.getAttribute('id') === tabId + '-content') {
+          section.classList.add('active');
+        } else {
+          section.classList.remove('active');
+        }
+      });
+      
+      // Store active tab in session storage
+      sessionStorage.setItem('activeAirfoilTab', tabId);
+    }
+    
+    // Set initial active tab from storage or default to first tab
+    const savedTab = sessionStorage.getItem('activeAirfoilTab');
+    const firstTabId = tabs.length > 0 ? tabs[0].getAttribute('data-tab') : null;
+    const initialTabId = savedTab || firstTabId;
+    
+    if (initialTabId) {
+      activateTab(initialTabId);
+    }
+    
+    // Add click handlers to tabs
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabId = tab.getAttribute('data-tab');
+        if (tabId) {
+          activateTab(tabId);
+        }
+      });
+    });
+  });
+</script>

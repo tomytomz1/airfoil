@@ -1,0 +1,170 @@
+---
+export interface Props {
+  name: string;
+  coordinates: number[][];
+}
+
+const { name, coordinates } = Astro.props;
+---
+
+<div class="bg-white rounded-lg shadow-sm mb-6" id="3d-content">
+  <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+    <h2 class="text-lg font-medium text-gray-900">3D Model</h2>
+    
+    <div class="flex space-x-2">
+      <button id="download3D" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+        <span class="flex items-center">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Download STL
+        </span>
+      </button>
+    </div>
+  </div>
+  
+  <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- 3D Viewer -->
+    <div class="h-80 bg-gray-50 border border-gray-200 rounded-lg p-2 relative" id="canvas3dContainer">
+      <!-- Placeholder for 3D model -->
+      <div class="absolute inset-0 flex items-center justify-center text-gray-400 text-center p-4">
+        <div>
+          <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path>
+          </svg>
+          <p>
+            3D model viewer will be displayed here.<br>
+            Load Three.js to enable interactive 3D visualization.
+          </p>
+        </div>
+      </div>
+      
+      <canvas id="airfoil3D" class="w-full h-full"></canvas>
+      
+      <!-- Model Controls -->
+      <div class="absolute bottom-3 right-3 flex space-x-1">
+        <button id="resetView3D" class="bg-white text-gray-700 p-1 rounded border border-gray-300 hover:bg-gray-100" title="Reset View">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
+        <button id="wireframeToggle" class="bg-white text-gray-700 p-1 rounded border border-gray-300 hover:bg-gray-100" title="Toggle Wireframe">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Wing Configuration -->
+    <div>
+      <h3 class="text-sm font-medium text-gray-700 mb-3">Wing Configuration</h3>
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="wingspan" class="block text-xs font-medium text-gray-700 mb-1">Wingspan (m)</label>
+            <input type="number" id="wingspan" min="0.1" max="50" step="0.1" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+          </div>
+          <div>
+            <label for="chordrootLength" class="block text-xs font-medium text-gray-700 mb-1">Root Chord (m)</label>
+            <input type="number" id="chordLength" min="0.05" max="10" step="0.05" value="1" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+          </div>
+          <div>
+            <label for="chordtipLength" class="block text-xs font-medium text-gray-700 mb-1">Tip Chord (m)</label>
+            <input type="number" id="chordtipLength" min="0.05" max="10" step="0.05" value="0.6" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+          </div>
+          <div>
+            <label for="sweepAngle" class="block text-xs font-medium text-gray-700 mb-1">Sweep Angle (deg)</label>
+            <input type="number" id="sweepAngle" min="0" max="45" step="1" value="15" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+          </div>
+          <div>
+            <label for="dihedralAngle" class="block text-xs font-medium text-gray-700 mb-1">Dihedral Angle (deg)</label>
+            <input type="number" id="dihedralAngle" min="0" max="15" step="0.5" value="5" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+          </div>
+          <div>
+            <label for="twistAngle" class="block text-xs font-medium text-gray-700 mb-1">Twist Angle (deg)</label>
+            <input type="number" id="twistAngle" min="-10" max="10" step="0.5" value="-2" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+          </div>
+        </div>
+        
+        <div class="mt-4">
+          <button id="updateWing" class="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700">
+            Update 3D Model
+          </button>
+        </div>
+      </div>
+      
+      <div>
+        <h3 class="text-sm font-medium text-gray-700 mb-2">Estimated Wing Performance</h3>
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
+          <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+            <div>
+              <dt class="text-xs text-gray-500">Aspect Ratio:</dt>
+              <dd class="text-sm font-medium text-gray-900">10.00</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Wing Area:</dt>
+              <dd class="text-sm font-medium text-gray-900">8.00 m²</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Taper Ratio:</dt>
+              <dd class="text-sm font-medium text-gray-900">0.60</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Wing Loading:</dt>
+              <dd class="text-sm font-medium text-gray-900">32.5 kg/m²</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Est. Stall Speed:</dt>
+              <dd class="text-sm font-medium text-gray-900">65 km/h</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Est. Max L/D:</dt>
+              <dd class="text-sm font-medium text-gray-900">18.5</dd>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Handle 3D model functionality would go here
+    // In a real implementation, you'd use Three.js for this
+    
+    // For now, we'll just handle the UI interactions
+    
+    // Wing configuration form handling
+    const wingConfigForm = document.querySelectorAll('#wingspan, #chordLength, #chordtipLength, #sweepAngle, #dihedralAngle, #twistAngle');
+    const updateWingBtn = document.getElementById('updateWing');
+    
+    updateWingBtn?.addEventListener('click', () => {
+      // Here you would update the 3D model with the new wing configuration
+      console.log('Updating wing with new configuration');
+      
+      // Flash a message to indicate update
+      updateWingBtn.textContent = 'Updated!';
+      setTimeout(() => {
+        updateWingBtn.textContent = 'Update 3D Model';
+      }, 1500);
+    });
+    
+    // Reset view button
+    document.getElementById('resetView3D')?.addEventListener('click', () => {
+      console.log('Resetting 3D view');
+    });
+    
+    // Wireframe toggle button
+    document.getElementById('wireframeToggle')?.addEventListener('click', () => {
+      console.log('Toggling wireframe mode');
+    });
+    
+    // Download STL button
+    document.getElementById('download3D')?.addEventListener('click', () => {
+      console.log('Downloading STL file');
+      alert('STL download functionality would be implemented here');
+    });
+  });
+</script>

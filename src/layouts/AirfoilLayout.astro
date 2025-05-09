@@ -1,0 +1,78 @@
+---
+export interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "" } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} – AeroFoilPro</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={`${title} – AeroFoilPro`} />
+    <meta property="og:description" content={description} />
+
+    <!-- Load Chart.js and related scripts with defer -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.umd.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" />
+    
+    <!-- Include any additional styles or scripts here -->
+    <style is:global>
+      html {
+        scroll-behavior: smooth;
+      }
+      .airfoil-tab.active {
+        color: #2563eb;
+        border-color: #2563eb;
+      }
+      .airfoil-tab-content {
+        display: none;
+      }
+      .airfoil-tab-content.active {
+        display: block;
+      }
+    </style>
+
+    <slot name="head" />
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <header class="bg-white border-b border-gray-200">
+      <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="text-xl font-bold text-blue-600">AeroFoilPro</a>
+        <nav class="hidden md:flex space-x-6">
+          <a href="/" class="text-gray-600 hover:text-blue-600">Home</a>
+          <a href="/browse" class="text-gray-600 hover:text-blue-600">Browse</a>
+          <a href="/compare" class="text-gray-600 hover:text-blue-600">Compare</a>
+        </nav>
+        <div class="flex items-center space-x-2">
+          <button class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">Sign In</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-6">
+      <slot />
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-12">
+      <div class="container mx-auto px-4 py-6">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <p class="text-gray-600 text-sm">&copy; 2024 AeroFoilPro. All rights reserved.</p>
+          <div class="flex space-x-4 mt-4 md:mt-0">
+            <a href="#" class="text-gray-600 hover:text-blue-600 text-sm">Privacy Policy</a>
+            <a href="#" class="text-gray-600 hover:text-blue-600 text-sm">Terms of Service</a>
+            <a href="#" class="text-gray-600 hover:text-blue-600 text-sm">Contact</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <slot name="after-footer" />
+  </body>
+</html>
