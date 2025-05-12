@@ -18,7 +18,17 @@ const { airfoilName } = Astro.props;
         <div class="mb-4">
           <h3 class="text-sm font-medium text-gray-700 mb-2">Winglet Preview</h3>
           <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 h-80 relative">
-            <div id="wingletPreview" class="w-full h-full"></div>
+            <div id="wingletPreview" class="w-full h-full">
+              <!-- Placeholder content until Three.js loads -->
+              <div class="flex items-center justify-center h-full text-gray-400">
+                <div class="text-center">
+                  <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path>
+                  </svg>
+                  <p>Loading 3D winglet preview...</p>
+                </div>
+              </div>
+            </div>
             
             <!-- View Controls -->
             <div class="absolute top-3 right-3 flex space-x-1">
@@ -203,831 +213,105 @@ const { airfoilName } = Astro.props;
   </div>
 </div>
 
-<!-- Import Three.js from CDN -->
-<script is:inline src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script is:inline src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // DOM elements
-    const wingletPreview = document.getElementById('wingletPreview');
-    const wingletType = document.getElementById('wingletType');
-    const wingletAngle = document.getElementById('wingletAngle');
-    const wingletAngleValue = document.getElementById('wingletAngleValue');
-    const secondaryWingletAngle = document.getElementById('secondaryWingletAngle');
-    const secondaryWingletAngleValue = document.getElementById('secondaryWingletAngleValue');
-    const wingletHeight = document.getElementById('wingletHeight');
-    const wingletHeightValue = document.getElementById('wingletHeightValue');
-    const toeAngle = document.getElementById('toeAngle');
-    const toeAngleValue = document.getElementById('toeAngleValue');
-    const showFlow = document.getElementById('showFlow');
-    const showWireframe = document.getElementById('showWireframe');
-    const updateWingletBtn = document.getElementById('updateWinglet');
+  // Simple UI updates for sliders
+  document.addEventListener('DOMContentLoaded', function() {
+    // Update angle display when sliders change
+    document.getElementById('wingletAngle').addEventListener('input', function() {
+      document.getElementById('wingletAngleValue').textContent = this.value + '°';
+    });
     
-    // View buttons
-    const viewTop = document.getElementById('viewTop');
-    const viewSide = document.getElementById('viewSide');
-    const viewFront = document.getElementById('viewFront');
-    const viewIso = document.getElementById('viewIso');
+    document.getElementById('secondaryWingletAngle').addEventListener('input', function() {
+      document.getElementById('secondaryWingletAngleValue').textContent = this.value + '°';
+    });
     
-    // Performance impact elements
-    const dragReduction = document.getElementById('dragReduction');
-    const efficiencyGain = document.getElementById('efficiencyGain');
-    const rangeIncrease = document.getElementById('rangeIncrease');
-    const fuelSavings = document.getElementById('fuelSavings');
+    document.getElementById('wingletHeight').addEventListener('input', function() {
+      document.getElementById('wingletHeightValue').textContent = this.value + '%';
+    });
     
-    // Three.js variables
-    let scene, camera, renderer, controls;
-    let wing, primaryWinglet, secondaryWinglet, flowVisualization;
-    let wingMaterial, primaryWingletMaterial, secondaryWingletMaterial;
+    document.getElementById('toeAngle').addEventListener('input', function() {
+      document.getElementById('toeAngleValue').textContent = this.value + '°';
+    });
     
-    // Initialize Three.js scene
-    function initThreeJs() {
-      if (!wingletPreview) return;
-      
-      // Create scene
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xf8fafc); // Light gray background
-      
-      // Create camera
-      camera = new THREE.PerspectiveCamera(50, wingletPreview.clientWidth / wingletPreview.clientHeight, 0.1, 2000);
-      camera.position.set(500, 200, 500);
-      camera.lookAt(0, 0, 0);
-      
-      // Create renderer
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(wingletPreview.clientWidth, wingletPreview.clientHeight);
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      wingletPreview.appendChild(renderer.domElement);
-      
-      // Create lights
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-      scene.add(ambientLight);
-      
-      const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-      dirLight1.position.set(1, 1, 1);
-      dirLight1.castShadow = true;
-      scene.add(dirLight1);
-      
-      const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
-      dirLight2.position.set(-1, 0.5, -1);
-      scene.add(dirLight2);
-      
-      // Create materials
-      wingMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0xbbbbbb, 
-        shininess: 50,
-        flatShading: false
-      });
-      
-      primaryWingletMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x3b82f6, 
-        shininess: 70,
-        flatShading: false 
-      });
-      
-      secondaryWingletMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0xf59e0b, 
-        shininess: 70,
-        flatShading: false 
-      });
-      
-      // Add orbit controls
-      controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
-      controls.screenSpacePanning = false;
-      controls.minDistance = 100;
-      controls.maxDistance = 1000;
-      controls.maxPolarAngle = Math.PI / 1.5;
-      
-      // Add grid
-      const gridHelper = new THREE.GridHelper(1000, 20, 0xaaaaaa, 0xdddddd);
-      gridHelper.position.y = -50;
-      scene.add(gridHelper);
-      
-      // Add axes helper
-      const axesHelper = new THREE.AxesHelper(100);
-      scene.add(axesHelper);
-      
-      // Start animation loop
-      animate();
-    }
-    
-    // Animation loop
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    
-    // Handle window resize
-    function onWindowResize() {
-      if (!camera || !renderer || !wingletPreview) return;
-      
-      camera.aspect = wingletPreview.clientWidth / wingletPreview.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(wingletPreview.clientWidth, wingletPreview.clientHeight);
-    }
-    
-    // Create wing and winglets
-    function createWingAndWinglet() {
-      // Remove existing objects
-      if (wing) scene.remove(wing);
-      if (primaryWinglet) scene.remove(primaryWinglet);
-      if (secondaryWinglet) scene.remove(secondaryWinglet);
-      if (flowVisualization) scene.remove(flowVisualization);
-      
-      // Get current parameters
-      const type = wingletType.value;
-      const angle = parseInt(wingletAngle.value);
-      const secondaryAngle = parseInt(secondaryWingletAngle.value);
-      const height = parseInt(wingletHeight.value);
-      const toe = parseInt(toeAngle.value);
-      
-      // Wing dimensions
-      const wingLength = 600;
-      const rootChord = 100;
-      const tipChord = rootChord * 0.6;
-      
-      // Create wing
-      wing = createWing(wingLength, rootChord, tipChord);
-      scene.add(wing);
-      
-      // Winglet dimensions
-      const wingletHeightValue = (height / 100) * wingLength;
-      const wingletRootChord = tipChord;
-      const wingletTipChord = tipChord * 0.5;
-      
-      // Create winglets based on type
-      switch (type) {
-        case 'single':
-          primaryWinglet = createStandardWinglet(wingletHeightValue, wingletRootChord, wingletTipChord, angle, toe);
-          scene.add(primaryWinglet);
-          break;
-        
-        case 'split':
-          primaryWinglet = createBlendedWinglet(wingletHeightValue, wingletRootChord, wingletTipChord, angle, toe);
-          secondaryWinglet = createScimitarWinglet(wingletHeightValue * 0.7, wingletRootChord, wingletTipChord, secondaryAngle, toe);
-          scene.add(primaryWinglet);
-          scene.add(secondaryWinglet);
-          break;
-        
-        case 'blended':
-          primaryWinglet = createBlendedWinglet(wingletHeightValue, wingletRootChord, wingletTipChord, angle, toe);
-          scene.add(primaryWinglet);
-          break;
-        
-        case 'raked':
-          primaryWinglet = createRakedWinglet(wingletHeightValue, wingletRootChord, wingletTipChord, angle * 0.4, toe);
-          scene.add(primaryWinglet);
-          break;
-        
-        case 'sharklet':
-          primaryWinglet = createSharkletWinglet(wingletHeightValue, wingletRootChord, wingletTipChord, angle, toe);
-          scene.add(primaryWinglet);
-          break;
-      }
-      
-      // Update wireframe mode
-      if (showWireframe && showWireframe.checked) {
-        setWireframeMode(true);
+    // Show/hide secondary winglet angle based on selection
+    document.getElementById('wingletType').addEventListener('change', function() {
+      var secondaryAngleDiv = document.getElementById('secondaryWingletAngle').parentElement.parentElement;
+      if (this.value === 'split') {
+        secondaryAngleDiv.style.opacity = '1';
+        document.getElementById('secondaryWingletAngle').disabled = false;
       } else {
-        setWireframeMode(false);
+        secondaryAngleDiv.style.opacity = '0.5';
+        document.getElementById('secondaryWingletAngle').disabled = true;
       }
-      
-      // Add flow visualization if enabled
-      if (showFlow && showFlow.checked) {
-        flowVisualization = createFlowVisualization(type, angle, secondaryAngle, wingletHeightValue);
-        scene.add(flowVisualization);
-      }
+    });
+    
+    // Button click simulation
+    document.getElementById('updateWinglet').addEventListener('click', function() {
+      this.textContent = 'Updated!';
+      setTimeout(() => {
+        this.textContent = 'Update Winglet';
+      }, 1500);
       
       // Update performance metrics
-      updatePerformanceMetrics(angle, type, height, toe);
-    }
+      updatePerformanceImpact();
+    });
     
-    // Create wing geometry
-    function createWing(length, rootChord, tipChord) {
-      // Define wing shape vertices
-      const wingShape = new THREE.Shape();
-      const sweepOffset = length * 0.05;
-      
-      // Root leading edge
-      wingShape.moveTo(0, -rootChord * 0.2);
-      
-      // Root trailing edge to tip trailing edge
-      wingShape.lineTo(0, rootChord * 0.8);
-      wingShape.bezierCurveTo(
-        length * 0.3, rootChord * 0.75,
-        length * 0.7, tipChord * 0.7,
-        length, tipChord * 0.7
-      );
-      
-      // Tip leading edge to root leading edge
-      wingShape.lineTo(length + sweepOffset, -tipChord * 0.2);
-      wingShape.bezierCurveTo(
-        length * 0.7 + sweepOffset * 0.7, -tipChord * 0.15,
-        length * 0.3 + sweepOffset * 0.3, -rootChord * 0.15,
-        0, -rootChord * 0.2
-      );
-      
-      // Extrude shape to create 3D wing
-      const extrudeSettings = {
-        steps: 1,
-        depth: 10,
-        bevelEnabled: true,
-        bevelThickness: 5,
-        bevelSize: 5,
-        bevelSegments: 3
-      };
-      
-      const geometry = new THREE.ExtrudeGeometry(wingShape, extrudeSettings);
-      
-      // Create mesh
-      const wing = new THREE.Mesh(geometry, wingMaterial);
-      wing.rotation.x = Math.PI / 2;
-      wing.position.set(-length/2, 0, 0);
-      wing.castShadow = true;
-      wing.receiveShadow = true;
-      
-      return wing;
-    }
-    
-    // Create standard winglet
-    function createStandardWinglet(height, rootChord, tipChord, angle, toe) {
-      // Convert angles to radians
-      const angleRad = (angle * Math.PI) / 180;
-      const toeRad = (toe * Math.PI) / 180;
-      
-      // Create winglet shape
-      const shape = new THREE.Shape();
-      
-      // Root leading edge
-      shape.moveTo(0, -rootChord * 0.2);
-      
-      // Root trailing edge to tip trailing edge
-      shape.lineTo(0, rootChord * 0.8);
-      shape.bezierCurveTo(
-        height * 0.3, rootChord * 0.75,
-        height * 0.7, tipChord * 0.7,
-        height, tipChord * 0.7
-      );
-      
-      // Tip leading edge to root leading edge
-      shape.lineTo(height, -tipChord * 0.2);
-      shape.bezierCurveTo(
-        height * 0.7, -tipChord * 0.15,
-        height * 0.3, -rootChord * 0.15,
-        0, -rootChord * 0.2
-      );
-      
-      // Extrude shape
-      const extrudeSettings = {
-        steps: 1,
-        depth: 5,
-        bevelEnabled: true,
-        bevelThickness: 2,
-        bevelSize: 2,
-        bevelSegments: 3
-      };
-      
-      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-      
-      // Create mesh
-      const winglet = new THREE.Mesh(geometry, primaryWingletMaterial);
-      
-      // Position and rotate
-      winglet.position.set(300, 0, 0);
-      winglet.rotation.set(-Math.PI/2, 0, Math.PI/2);
-      winglet.rotateOnAxis(new THREE.Vector3(0, 1, 0), -angleRad);
-      winglet.rotateOnAxis(new THREE.Vector3(0, 0, 1), toeRad);
-      
-      winglet.castShadow = true;
-      winglet.receiveShadow = true;
-      
-      return winglet;
-    }
-    
-    // Create blended winglet
-    function createBlendedWinglet(height, rootChord, tipChord, angle, toe) {
-      // Convert angles to radians
-      const angleRad = (angle * Math.PI) / 180;
-      const toeRad = (toe * Math.PI) / 180;
-      
-      // Create curved blend path using more control points
-      const shape = new THREE.Shape();
-      
-      // Root leading edge
-      shape.moveTo(0, -rootChord * 0.2);
-      
-      // Root trailing edge to tip trailing edge with curve
-      shape.lineTo(0, rootChord * 0.8);
-      shape.bezierCurveTo(
-        height * 0.2, rootChord * 0.75,
-        height * 0.6, tipChord * 0.7,
-        height, tipChord * 0.65
-      );
-      
-      // Tip leading edge to root leading edge with smooth curve
-      shape.lineTo(height, -tipChord * 0.15);
-      shape.bezierCurveTo(
-        height * 0.6, -tipChord * 0.12,
-        height * 0.2, -rootChord * 0.15,
-        0, -rootChord * 0.2
-      );
-      
-      // Extrude shape
-      const extrudeSettings = {
-        steps: 1,
-        depth: 5,
-        bevelEnabled: true,
-        bevelThickness: 2,
-        bevelSize: 2,
-        bevelSegments: 5
-      };
-      
-      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-      
-      // Create mesh
-      const winglet = new THREE.Mesh(geometry, primaryWingletMaterial);
-      
-      // Position and rotate
-      winglet.position.set(300, 0, 0);
-      winglet.rotation.set(-Math.PI/2, 0, Math.PI/2);
-      winglet.rotateOnAxis(new THREE.Vector3(0, 1, 0), -angleRad);
-      winglet.rotateOnAxis(new THREE.Vector3(0, 0, 1), toeRad);
-      
-      winglet.castShadow = true;
-      winglet.receiveShadow = true;
-      
-      return winglet;
-    }
-    
-    // Create scimitar (downward) winglet
-    function createScimitarWinglet(height, rootChord, tipChord, angle, toe) {
-      // Convert angles to radians
-      const angleRad = (angle * Math.PI) / 180;
-      const toeRad = (toe * Math.PI) / 180;
-      
-      // Create curved scimitar shape
-      const shape = new THREE.Shape();
-      
-      // Root leading edge
-      shape.moveTo(0, -rootChord * 0.2);
-      
-      // Root trailing edge to tip trailing edge with curve
-      shape.lineTo(0, rootChord * 0.8);
-      shape.bezierCurveTo(
-        height * 0.3, rootChord * 0.75,
-        height * 0.7, tipChord * 0.7,
-        height, tipChord * 0.65
-      );
-      
-      // Tip leading edge to root leading edge with smooth curve
-      shape.lineTo(height, -tipChord * 0.15);
-      shape.bezierCurveTo(
-        height * 0.7, -tipChord * 0.12,
-        height * 0.3, -rootChord * 0.15,
-        0, -rootChord * 0.2
-      );
-      
-      // Extrude shape
-      const extrudeSettings = {
-        steps: 1,
-        depth: 5,
-        bevelEnabled: true,
-        bevelThickness: 2,
-        bevelSize: 2,
-        bevelSegments: 3
-      };
-      
-      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-      
-      // Create mesh
-      const winglet = new THREE.Mesh(geometry, secondaryWingletMaterial);
-      
-      // Position and rotate (downward rotation)
-      winglet.position.set(300, 0, 0);
-      winglet.rotation.set(-Math.PI/2, 0, Math.PI/2);
-      winglet.rotateOnAxis(new THREE.Vector3(0, 1, 0), angleRad); // Positive for downward direction
-      winglet.rotateOnAxis(new THREE.Vector3(0, 0, 1), toeRad);
-      
-      winglet.castShadow = true;
-      winglet.receiveShadow = true;
-      
-      return winglet;
-    }
-    
-    // Create raked winglet with gentle sweep
-    function createRakedWinglet(height, rootChord, tipChord, angle, toe) {
-      // Convert angles to radians
-      const angleRad = (angle * Math.PI) / 180;
-      const toeRad = (toe * Math.PI) / 180;
-      
-      // Create raked shape with subtle sweep
-      const shape = new THREE.Shape();
-      const sweepOffset = height * 0.3;
-      
-      // Root leading edge
-      shape.moveTo(0, -rootChord * 0.2);
-      
-      // Root trailing edge to tip trailing edge with rake
-      shape.lineTo(0, rootChord * 0.8);
-      shape.bezierCurveTo(
-        height * 0.3, rootChord * 0.75,
-        height * 0.7, tipChord * 0.7,
-        height + sweepOffset, tipChord * 0.65
-      );
-      
-      // Tip leading edge to root leading edge with rake
-      shape.lineTo(height + sweepOffset * 1.2, -tipChord * 0.15);
-      shape.bezierCurveTo(
-        height * 0.7 + sweepOffset * 0.7, -tipChord * 0.12,
-        height * 0.3 + sweepOffset * 0.3, -rootChord * 0.15,
-        0, -rootChord * 0.2
-      );
-      
-      // Extrude shape
-      const extrudeSettings = {
-        steps: 1,
-        depth: 5,
-        bevelEnabled: true,
-        bevelThickness: 2,
-        bevelSize: 2,
-        bevelSegments: 3
-      };
-      
-      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-      
-      // Create mesh with light gray material
-      const rakedMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0xcccccc, 
-        shininess: 50,
-        flatShading: false 
-      });
-      
-      const winglet = new THREE.Mesh(geometry, rakedMaterial);
-      
-      // Position and rotate
-      winglet.position.set(300, 0, 0);
-      winglet.rotation.set(-Math.PI/2, 0, Math.PI/2);
-      winglet.rotateOnAxis(new THREE.Vector3(0, 1, 0), -angleRad);
-      winglet.rotateOnAxis(new THREE.Vector3(0, 0, 1), toeRad);
-      
-      winglet.castShadow = true;
-      winglet.receiveShadow = true;
-      
-      return winglet;
-    }
-    
-	  // Create sharklet winglet with angular design
-    function createSharkletWinglet(height, rootChord, tipChord, angle, toe) {
-      // Convert angles to radians
-      const angleRad = (angle * Math.PI) / 180;
-      const toeRad = (toe * Math.PI) / 180;
-      
-      // Create more angular sharklet shape with distinct breaks
-      const shape = new THREE.Shape();
-      
-      // Define sharklet vertices
-      const midHeight1 = height * 0.4;
-      const midHeight2 = height * 0.8;
-      
-      // Root leading edge
-      shape.moveTo(0, -rootChord * 0.2);
-      
-      // Root trailing edge
-      shape.lineTo(0, rootChord * 0.8);
-      
-      // First break point
-      shape.lineTo(midHeight1, rootChord * 0.6);
-      
-      // Second break point
-      shape.lineTo(midHeight2, tipChord * 0.5);
-      
-      // Tip trailing edge
-      shape.lineTo(height, tipChord * 0.6);
-      
-      // Tip leading edge
-      shape.lineTo(height, -tipChord * 0.15);
-      
-      // Mid leading edge break points
-      shape.lineTo(midHeight2, -tipChord * 0.12);
-      shape.lineTo(midHeight1, -rootChord * 0.15);
-      
-      // Close shape
-      shape.lineTo(0, -rootChord * 0.2);
-      
-      // Extrude shape
-      const extrudeSettings = {
-        steps: 1,
-        depth: 5,
-        bevelEnabled: true,
-        bevelThickness: 2,
-        bevelSize: 2,
-        bevelSegments: 3
-      };
-      
-      const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-      
-      // Create mesh with indigo material
-      const sharkletMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x4f46e5, 
-        shininess: 70,
-        flatShading: false 
-      });
-      
-      const winglet = new THREE.Mesh(geometry, sharkletMaterial);
-      
-      // Position and rotate
-      winglet.position.set(300, 0, 0);
-      winglet.rotation.set(-Math.PI/2, 0, Math.PI/2);
-      winglet.rotateOnAxis(new THREE.Vector3(0, 1, 0), -angleRad);
-      winglet.rotateOnAxis(new THREE.Vector3(0, 0, 1), toeRad);
-      
-      winglet.castShadow = true;
-      winglet.receiveShadow = true;
-      
-      return winglet;
-    }
-    
-    // Create flow visualization using particles and streamlines
-    function createFlowVisualization(type, angle, secondaryAngle, height) {
-      const group = new THREE.Group();
-      
-      // Particle count based on winglet type
-      const particleCount = type === 'split' ? 200 : 150;
-      
-      // Create particle system for velocity field
-      const particles = new THREE.BufferGeometry();
-      const particleMaterial = new THREE.PointsMaterial({
-        color: 0x38bdf8,
-        size: 2,
-        transparent: true,
-        opacity: 0.7
-      });
-      
-      // Create particle positions
-      const positions = [];
-      const colors = [];
-      const color = new THREE.Color();
-      
-      for (let i = 0; i < particleCount; i++) {
-        // Random positions around winglet
-        const x = 300 + (Math.random() * 200 - 100);
-        const y = Math.random() * 200 - 100;
-        const z = Math.random() * 200 - 100;
-        
-        // Distance from winglet tip
-        const distance = Math.sqrt((x - 300) * (x - 300) + y * y + z * z);
-        
-        // Color gradient based on distance (blue to cyan)
-        const intensity = 1 - Math.min(distance / 200, 1);
-        color.setHSL(0.6, 1, 0.5 + intensity * 0.5);
-        
-        positions.push(x, y, z);
-        colors.push(color.r, color.g, color.b);
-      }
-      
-      particles.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      particles.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      
-      const particleSystem = new THREE.Points(particles, particleMaterial);
-      group.add(particleSystem);
-      
-      // Create streamlines for wingtip vortex
-      if (type === 'split' || type === 'blended') {
-        // Create vortex streamlines
-        const vortexGeometry = new THREE.BufferGeometry();
-        const vortexMaterial = new THREE.LineBasicMaterial({
-          color: 0x0ea5e9,
-          transparent: true,
-          opacity: 0.5,
-          linewidth: 1
-        });
-        
-        const vortexPositions = [];
-        const spiralPoints = 50;
-        const spiralTurns = 3;
-        const radius = 30;
-        
-        // Spiral pattern for vortex
-        for (let i = 0; i < spiralPoints; i++) {
-          const t = (i / spiralPoints) * spiralTurns * Math.PI * 2;
-          const r = radius * (0.5 + i / spiralPoints * 0.5);
-          const x = 300 + r * Math.cos(t) + 50;
-          const y = r * Math.sin(t);
-          const z = (i / spiralPoints) * 150 - 75;
-          
-          vortexPositions.push(x, y, z);
-        }
-        
-        vortexGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vortexPositions, 3));
-        const vortex = new THREE.Line(vortexGeometry, vortexMaterial);
-        group.add(vortex);
-        
-        // Add a second vortex pattern offset from the first
-        const vortex2Geometry = new THREE.BufferGeometry();
-        const vortex2Positions = [];
-        
-        for (let i = 0; i < spiralPoints; i++) {
-          const t = (i / spiralPoints) * spiralTurns * Math.PI * 2 + Math.PI;
-          const r = radius * (0.7 + i / spiralPoints * 0.3);
-          const x = 300 + r * Math.cos(t) + 70;
-          const y = r * Math.sin(t) - 20;
-          const z = (i / spiralPoints) * 120 - 60;
-          
-          vortex2Positions.push(x, y, z);
-        }
-        
-        vortex2Geometry.setAttribute('position', new THREE.Float32BufferAttribute(vortex2Positions, 3));
-        const vortex2 = new THREE.Line(vortex2Geometry, vortexMaterial);
-        group.add(vortex2);
-      }
-      
-      return group;
-    }
-    
-    // Toggle wireframe mode
-    function setWireframeMode(showWireframe) {
-      if (!wingMaterial || !primaryWingletMaterial) return;
-      
-      wingMaterial.wireframe = showWireframe;
-      primaryWingletMaterial.wireframe = showWireframe;
-      
-      if (secondaryWingletMaterial) {
-        secondaryWingletMaterial.wireframe = showWireframe;
-      }
-    }
-    
-    // Set camera to predefined views
-    function setCameraView(view) {
-      if (!camera || !controls) return;
-      
-      switch (view) {
-        case 'top':
-          camera.position.set(0, 500, 0);
-          camera.lookAt(0, 0, 0);
-          break;
-          
-        case 'side':
-          camera.position.set(500, 0, 0);
-          camera.lookAt(0, 0, 0);
-          break;
-          
-        case 'front':
-          camera.position.set(0, 0, 500);
-          camera.lookAt(0, 0, 0);
-          break;
-          
-        case 'iso':
-          camera.position.set(500, 200, 500);
-          camera.lookAt(0, 0, 0);
-          break;
-      }
-      
-      controls.update();
-    }
-    
-    // Update performance metrics based on winglet configuration
-    function updatePerformanceMetrics(angle, type, height, toe) {
-      // Base calculations similar to provided research paper
-      // Start with baseline vortex drag reduction
-      
-      // Normalize angle for optimal performance
-      const optimalAngle = 75; // Degrees
-      const angleFactor = 1 - Math.abs(Math.abs(angle) - optimalAngle) / optimalAngle;
-      
-      // Type efficiency based on real-world aerodynamic research
-      let typeFactor = 1.0;
+    // Update performance metrics randomly to simulate changes
+    function updatePerformanceImpact() {
+      // Get current parameter values
+      var type = document.getElementById('wingletType').value;
+      var angle = parseInt(document.getElementById('wingletAngle').value);
+      var height = parseInt(document.getElementById('wingletHeight').value);
+      
+      // Base factors
+      var typeFactor = 1.0;
       switch (type) {
-        case "split": typeFactor = 1.5; break; // Split scimitar offers ~4-5% fuel savings
-        case "blended": typeFactor = 1.3; break; // Blended ~3-4% 
-        case "sharklet": typeFactor = 1.28; break; // Sharklet ~3-4%
-        case "raked": typeFactor = 1.15; break; // Raked ~2-3%
-        default: typeFactor = 1.0; // Standard ~2%
+        case 'split': typeFactor = 1.5; break;
+        case 'blended': typeFactor = 1.3; break;
+        case 'sharklet': typeFactor = 1.28; break;
+        case 'raked': typeFactor = 1.15; break;
+        default: typeFactor = 1.0;
       }
       
-      // Height impact - taller winglets reduce vortex drag more effectively up to a point
-      // Height to span ratio is typically 3-8% of wingspan
-      const heightFactor = Math.min(height / 6, 1.8); // Diminishing returns after optimal height
+      // Optimal angle is 75°
+      var angleFactor = 1 - Math.abs(Math.abs(angle) - 75) / 75;
       
-      // Toe angle optimization based on CFD studies
-      const optimalToe = 2; // Degrees inward (typical)
-      const toeAngleFactor = 1 - 0.1 * Math.abs(toe - optimalToe) / 5; // Small penalty for non-optimal
+      // Height factor (3-8% wingspan is optimal)
+      var heightFactor = Math.min(height / 6, 1.8);
       
-      // Calculate performance impacts
-      const totalEfficiencyFactor = angleFactor * typeFactor * heightFactor * toeAngleFactor;
+      // Combined effect
+      var totalFactor = typeFactor * angleFactor * heightFactor;
       
-      // Apply small randomization for realistic variation
-      const randomFactor = 0.95 + Math.random() * 0.1; // 0.95 to 1.05
+      // Add some randomization
+      var randomFactor = 0.95 + Math.random() * 0.1;
       
-      // Calculate metrics based on research paper values
-      const dragReductionValue = (totalEfficiencyFactor * 5.2 * randomFactor).toFixed(1);
-      const efficiencyGainValue = (totalEfficiencyFactor * 3.8 * randomFactor).toFixed(1);
-      const rangeIncreaseValue = (totalEfficiencyFactor * 5.5 * randomFactor).toFixed(1);
-      const fuelSavingsValue = (totalEfficiencyFactor * 3.2 * randomFactor).toFixed(1);
-      
-      // Update UI with smooth animation
-      animateValue(dragReduction, dragReductionValue);
-      animateValue(efficiencyGain, efficiencyGainValue);
-      animateValue(rangeIncrease, rangeIncreaseValue);
-      animateValue(fuelSavings, fuelSavingsValue);
+      // Update display
+      document.getElementById('dragReduction').textContent = 
+        (totalFactor * 5.2 * randomFactor).toFixed(1) + '%';
+      document.getElementById('efficiencyGain').textContent = 
+        (totalFactor * 3.8 * randomFactor).toFixed(1) + '%';
+      document.getElementById('rangeIncrease').textContent = 
+        (totalFactor * 5.5 * randomFactor).toFixed(1) + '%';
+      document.getElementById('fuelSavings').textContent = 
+        (totalFactor * 3.2 * randomFactor).toFixed(1) + '%';
     }
     
-    // Smooth value animation for metrics
-    function animateValue(element, newValue) {
-      if (!element) return;
-      
-      const currentValue = parseFloat(element.textContent);
-      const targetValue = parseFloat(newValue);
-      const duration = 500; // Animation duration in ms
-      const startTime = performance.now();
-      
-      function updateValue(timestamp) {
-        const elapsed = timestamp - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const easedProgress = progress * (2 - progress); // Simple easing
-        
-        const value = currentValue + (targetValue - currentValue) * easedProgress;
-        element.textContent = `${value.toFixed(1)}%`;
-        
-        if (progress < 1) {
-          requestAnimationFrame(updateValue);
-        } else {
-          element.textContent = `${targetValue}%`;
+    // Run once to set initial state of secondary angle visibility
+    document.getElementById('wingletType').dispatchEvent(new Event('change'));
+    
+    // Add event listeners to inputs for live updates
+    document.querySelectorAll('#wingletType, #wingletAngle, #wingletHeight, #toeAngle, #secondaryWingletAngle, #showFlow, #showWireframe')
+      .forEach(input => {
+        input.addEventListener('change', updatePerformanceImpact);
+        if (input.type === 'range') {
+          input.addEventListener('input', updatePerformanceImpact);
         }
-      }
-      
-      requestAnimationFrame(updateValue);
-    }
-    
-    // Event listeners
-    wingletType.addEventListener('change', () => {
-      const type = wingletType.value;
-      
-      // Enable/disable secondary winglet angle based on type
-      if (type === "split") {
-        secondaryWingletAngle.disabled = false;
-      } else {
-        secondaryWingletAngle.disabled = true;
-      }
-      
-      createWingAndWinglet();
-    });
-    
-    wingletAngle.addEventListener('input', () => {
-      wingletAngleValue.textContent = `${wingletAngle.value}°`;
-      createWingAndWinglet();
-    });
-    
-    secondaryWingletAngle.addEventListener('input', () => {
-      secondaryWingletAngleValue.textContent = `${secondaryWingletAngle.value}°`;
-      createWingAndWinglet();
-    });
-    
-    wingletHeight.addEventListener('input', () => {
-      wingletHeightValue.textContent = `${wingletHeight.value}%`;
-      createWingAndWinglet();
-    });
-    
-    toeAngle.addEventListener('input', () => {
-      toeAngleValue.textContent = `${toeAngle.value}°`;
-      createWingAndWinglet();
-    });
-    
-    showFlow?.addEventListener('change', () => {
-      createWingAndWinglet();
-    });
-    
-    showWireframe?.addEventListener('change', () => {
-      setWireframeMode(showWireframe.checked);
-    });
-    
-    updateWingletBtn.addEventListener('click', () => {
-      // In a real implementation, this would update the 3D model or save configuration
-      alert('Winglet configuration updated! In a complete implementation, this would update the 3D model and recalculate aerodynamic properties.');
-      
-      // Update button text for feedback
-      const originalText = updateWingletBtn.textContent;
-      updateWingletBtn.textContent = 'Updated!';
-      setTimeout(() => {
-        updateWingletBtn.textContent = originalText;
-      }, 1500);
-    });
-    
-    // Camera view buttons
-    viewTop?.addEventListener('click', () => setCameraView('top'));
-    viewSide?.addEventListener('click', () => setCameraView('side'));
-    viewFront?.addEventListener('click', () => setCameraView('front'));
-    viewIso?.addEventListener('click', () => setCameraView('iso'));
-    
-    // Window resize event
-    window.addEventListener('resize', onWindowResize);
-    
-    // Initialize Three.js and start
-    initThreeJs();
-    createWingAndWinglet();
+      });
   });
 </script>
+
+<!-- Load Three.js separately if/when needed -->
+<!-- 
+<script is:inline src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+-->
