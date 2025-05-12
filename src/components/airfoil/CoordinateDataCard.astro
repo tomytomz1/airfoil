@@ -35,10 +35,10 @@ const { coordinates } = Astro.props;
       <div class="mb-4">
         <h3 class="text-sm font-medium text-gray-700 mb-2">Airfoil Profile</h3>
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 h-64 relative">
-          <canvas id="airfoilChart" class="w-full h-full"></canvas>
+          <canvas id="airfoilChart" class="w-full h-full cursor-grab"></canvas>
           
           <!-- Chart Controls -->
-          <div class="absolute bottom-3 right-3 flex space-x-1">
+          <div class="absolute bottom-1 right-3 flex space-x-1">
             <button id="zoomIn" class="bg-white text-gray-700 p-1 rounded border border-gray-300 hover:bg-gray-100" title="Zoom In">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path>
@@ -81,7 +81,7 @@ const { coordinates } = Astro.props;
     <!-- Coordinate Data Table -->
     <div>
       <h3 class="text-sm font-medium text-gray-700 mb-2">Coordinate Data</h3>
-      <div class="bg-gray-50 border border-gray-200 rounded-lg p-2">
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 flex flex-col" style="height: 26.9rem">
         <div class="mb-2">
           <input 
             type="text" 
@@ -90,7 +90,7 @@ const { coordinates } = Astro.props;
             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
           />
         </div>
-        <div class="h-80 overflow-auto" id="tableContainer">
+        <div class="flex-grow overflow-auto" id="tableContainer">
           <table class="min-w-full border-collapse">
             <thead class="bg-gray-100 sticky top-0">
               <tr>
@@ -120,69 +120,102 @@ const { coordinates } = Astro.props;
 </div>
 
 <script define:vars={{ coordinates }}>
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM loaded. Coordinates:", coordinates.length);
+    
     // Create the airfoil chart
     const createAirfoilChart = () => {
       const canvas = document.getElementById('airfoilChart');
-      if (!canvas || !(canvas instanceof HTMLCanvasElement)) return null;
+      if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
+        console.error("Canvas element not found");
+        return null;
+      }
       
       const ctx = canvas.getContext('2d');
-      if (!ctx) return null;
+      if (!ctx) {
+        console.error("Could not get canvas context");
+        return null;
+      }
       
-      const airfoilData = coordinates.map(([x, y]) => ({ x, y }));
+      // Set canvas dimensions for better resolution
+      const displayWidth = canvas.clientWidth;
+      const displayHeight = canvas.clientHeight;
+      canvas.width = displayWidth * 2;
+      canvas.height = displayHeight * 2;
+      ctx.scale(2, 2);
       
+      // Create dataset with visible dots
       const chart = new Chart(ctx, {
         type: 'scatter',
         data: {
           datasets: [{
             label: 'Airfoil Profile',
-            data: airfoilData,
+            data: coordinates.map(([x, y]) => ({ x, y })),
             borderColor: '#2563eb',
             backgroundColor: 'rgba(37, 99, 235, 0.7)',
             borderWidth: 2,
             showLine: true,
             tension: 0,
-            pointRadius: 2,
-            pointHoverRadius: 5
+            pointRadius: 4,
+            pointHoverRadius: 7,
+            pointHitRadius: 12
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           scales: {
-            x: {
-              title: {
-                display: true,
-                text: 'x/c'
-              },
+            x: { 
+              title: { display: true, text: 'x/c' }, 
+              min: 0, 
+              max: 1,
               ticks: {
-                maxTicksLimit: 10
+                maxTicksLimit: 11,
+                precision: 1
               },
-              min: 0,
-              max: 1
+              grid: {
+                display: true,
+                drawOnChartArea: true
+              }
             },
-            y: {
-              title: {
-                display: true,
-                text: 'y/c'
-              },
+            y: { 
+              beginAtZero: false, 
+              title: { display: true, text: 'y/c' }, 
+              min: -0.2, 
+              max: 0.2,
               ticks: {
-                maxTicksLimit: 10
+                maxTicksLimit: 11,
+                precision: 2
               },
-              min: -0.2,
-              max: 0.2
+              grid: {
+                display: true,
+                drawOnChartArea: true
+              }
             }
           },
-          plugins: {
-            legend: {
-              display: false
-            },
+          plugins: { 
+            legend: { display: false },
             tooltip: {
+              enabled: true,
               callbacks: {
                 label: (item) => {
                   return `(${item.parsed.x.toFixed(4)}, ${item.parsed.y.toFixed(4)})`;
                 }
               }
+            }
+          },
+          onHover: (event, elements) => {
+            if (elements && elements.length > 0) {
+              const index = elements[0].index;
+              highlightTableRow(index);
+              scrollToTableRow(index);
+            }
+          },
+          onClick: (event, elements) => {
+            if (elements && elements.length > 0) {
+              const index = elements[0].index;
+              const point = coordinates[index];
+              zoomToPoint(chart, point[0], point[1]);
             }
           }
         }
@@ -191,145 +224,284 @@ const { coordinates } = Astro.props;
       return chart;
     };
     
-    // Initialize the chart
-    const chart = createAirfoilChart();
-    if (!chart) return;
-    
-    // Default scale values for reset
-    const defaultScales = {
-      x: { min: 0, max: 1 },
-      y: { min: -0.2, max: 0.2 }
-    };
-    
-    // Zoom functionality
-    document.getElementById('zoomIn')?.addEventListener('click', () => {
-      zoomChart(chart, 1.2); // Zoom in by 20%
-    });
-    
-    document.getElementById('zoomOut')?.addEventListener('click', () => {
-      zoomChart(chart, 0.8); // Zoom out by 20%
-    });
-    
-    document.getElementById('resetZoom')?.addEventListener('click', () => {
-      resetZoom(chart);
-    });
-    
-    function zoomChart(chart, factor) {
-      const xAxis = chart.scales.x;
-      const yAxis = chart.scales.y;
+    // Function to highlight a table row by index
+    function highlightTableRow(index) {
+      // Clear all highlights first
+      document.querySelectorAll('.coord-row').forEach(row => {
+        row.classList.remove('bg-yellow-50');
+      });
       
-      // Calculate center
-      const centerX = (xAxis.min + xAxis.max) / 2;
-      const centerY = (yAxis.min + yAxis.max) / 2;
+      // Add highlight to the matching row
+      const targetRow = document.querySelector(`.coord-row[data-index="${index}"]`);
+      if (targetRow) {
+        targetRow.classList.add('bg-yellow-50');
+      }
+    }
+    
+    // Function to scroll the table to a row by index
+    function scrollToTableRow(index) {
+      const targetRow = document.querySelector(`.coord-row[data-index="${index}"]`);
+      if (targetRow) {
+        const tableContainer = document.getElementById('tableContainer');
+        if (tableContainer) {
+          // Calculate position to scroll to (row top - header height)
+          const headerHeight = document.querySelector('thead').offsetHeight || 0;
+          tableContainer.scrollTop = targetRow.offsetTop - headerHeight;
+        }
+      }
+    }
+    
+    // Function to zoom to a specific point
+    function zoomToPoint(chart, x, y) {
+      if (!chart) return;
       
-      // Calculate new range
-      const rangeX = (xAxis.max - xAxis.min) / factor;
-      const rangeY = (yAxis.max - yAxis.min) / factor;
+      const xRange = chart.scales.x.max - chart.scales.x.min;
+      const yRange = chart.scales.y.max - chart.scales.y.min;
       
-      // Set new min and max values
-      chart.options.scales.x.min = centerX - rangeX / 2;
-      chart.options.scales.x.max = centerX + rangeX / 2;
-      chart.options.scales.y.min = centerY - rangeY / 2;
-      chart.options.scales.y.max = centerY + rangeY / 2;
+      chart.options.scales.x.min = x - xRange/4;
+      chart.options.scales.x.max = x + xRange/4;
+      chart.options.scales.y.min = y - yRange/4;
+      chart.options.scales.y.max = y + yRange/4;
       
       chart.update();
     }
     
-    function resetZoom(chart) {
-      chart.options.scales.x.min = defaultScales.x.min;
-      chart.options.scales.x.max = defaultScales.x.max;
-      chart.options.scales.y.min = defaultScales.y.min;
-      chart.options.scales.y.max = defaultScales.y.max;
-      chart.update();
-    }
-    
-    // Table row highlighting and chart point highlighting
-    const rows = document.querySelectorAll('.coord-row');
-    rows.forEach(row => {
-      row.addEventListener('mouseenter', () => {
-        const index = parseInt(row.getAttribute('data-index') || "0");
-        chart.setActiveElements([{ datasetIndex: 0, index }]);
-        chart.update();
-      });
+    // Initialize the chart once Chart.js is available
+    function initializeApp() {
+      if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded!');
+        // Try again in 100ms
+        setTimeout(initializeApp, 100);
+        return;
+      }
       
-      row.addEventListener('mouseleave', () => {
-        chart.setActiveElements([]);
-        chart.update();
-      });
+      console.log("Chart.js is available, initializing chart");
       
-      row.addEventListener('click', () => {
-        const index = parseInt(row.getAttribute('data-index') || "0");
-        const point = coordinates[index];
+      // Initialize the chart
+      const chart = createAirfoilChart();
+      if (!chart) {
+        console.error("Failed to create chart");
+        return;
+      }
+      
+      // Default scale values for reset
+      const defaultScales = {
+        x: { min: 0, max: 1 },
+        y: { min: -0.2, max: 0.2 }
+      };
+      
+      // Enable drag and drop functionality (manually implemented)
+      let isDragging = false;
+      let lastX = 0;
+      let lastY = 0;
+      
+      const chartCanvas = document.getElementById('airfoilChart');
+      if (chartCanvas) {
+        chartCanvas.addEventListener('mousedown', (e) => {
+          isDragging = true;
+          lastX = e.offsetX;
+          lastY = e.offsetY;
+          chartCanvas.style.cursor = 'grabbing';
+        });
         
-        // Center the chart view on this point
-        const x = point[0];
-        const y = point[1];
+        chartCanvas.addEventListener('mouseup', () => {
+          isDragging = false;
+          chartCanvas.style.cursor = 'grab';
+        });
         
-        const xRange = chart.scales.x.max - chart.scales.x.min;
-        const yRange = chart.scales.y.max - chart.scales.y.min;
+        chartCanvas.addEventListener('mouseleave', () => {
+          isDragging = false;
+          chartCanvas.style.cursor = 'grab';
+        });
         
-        chart.options.scales.x.min = x - xRange/4;
-        chart.options.scales.x.max = x + xRange/4;
-        chart.options.scales.y.min = y - yRange/4;
-        chart.options.scales.y.max = y + yRange/4;
-        
-        chart.update();
-      });
-    });
-    
-    // Search functionality
-    const searchInput = document.getElementById('coordSearch');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        const target = e.target as HTMLInputElement;
-        const searchTerm = target.value.toLowerCase();
-        
-        rows.forEach(row => {
-          const textContent = row.textContent?.toLowerCase() || '';
+        chartCanvas.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
           
-          if (textContent.includes(searchTerm)) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
+          // Calculate pixel movement
+          const deltaX = e.offsetX - lastX;
+          const deltaY = e.offsetY - lastY;
+          lastX = e.offsetX;
+          lastY = e.offsetY;
+          
+          // Convert pixel movement to data scale
+          const xPixelRange = chart.scales.x.width;
+          const yPixelRange = chart.scales.y.height;
+          const xDataRange = chart.scales.x.max - chart.scales.x.min;
+          const yDataRange = chart.scales.y.max - chart.scales.y.min;
+          
+          const xMove = (deltaX / xPixelRange) * xDataRange;
+          const yMove = (deltaY / yPixelRange) * yDataRange;
+          
+          // Move in opposite direction of drag
+          chart.options.scales.x.min -= xMove;
+          chart.options.scales.x.max -= xMove;
+          chart.options.scales.y.min += yMove; // Invert y-axis movement
+          chart.options.scales.y.max += yMove;
+          
+          chart.update();
+        });
+        
+        // Mouse wheel zoom
+        chartCanvas.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          
+          // Get mouse position
+          const rect = chartCanvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          
+          // Convert position to data coordinates
+          const xPixel = (x / chart.scales.x.width) * (chart.scales.x.max - chart.scales.x.min) + chart.scales.x.min;
+          const yPixel = (1 - (y / chart.scales.y.height)) * (chart.scales.y.max - chart.scales.y.min) + chart.scales.y.min;
+          
+          // Determine zoom direction
+          const factor = e.deltaY < 0 ? 1.2 : 0.8;
+          
+          // Calculate new ranges
+          const xRange = (chart.scales.x.max - chart.scales.x.min) / factor;
+          const yRange = (chart.scales.y.max - chart.scales.y.min) / factor;
+          
+          // Set new limits centered on mouse position
+          chart.options.scales.x.min = xPixel - (xRange * (x / chartCanvas.width));
+          chart.options.scales.x.max = xPixel + (xRange * (1 - x / chartCanvas.width));
+          chart.options.scales.y.min = yPixel - (yRange * (1 - y / chartCanvas.height));
+          chart.options.scales.y.max = yPixel + (yRange * (y / chartCanvas.height));
+          
+          chart.update();
+        });
+      }
+      
+      // Zoom functionality using buttons
+      document.getElementById('zoomIn')?.addEventListener('click', () => {
+        const centerX = (chart.scales.x.min + chart.scales.x.max) / 2;
+        const centerY = (chart.scales.y.min + chart.scales.y.max) / 2;
+        
+        const xRange = (chart.scales.x.max - chart.scales.x.min) / 1.5;
+        const yRange = (chart.scales.y.max - chart.scales.y.min) / 1.5;
+        
+        chart.options.scales.x.min = centerX - xRange / 2;
+        chart.options.scales.x.max = centerX + xRange / 2;
+        chart.options.scales.y.min = centerY - yRange / 2;
+        chart.options.scales.y.max = centerY + yRange / 2;
+        
+        chart.update();
+      });
+      
+      document.getElementById('zoomOut')?.addEventListener('click', () => {
+        const centerX = (chart.scales.x.min + chart.scales.x.max) / 2;
+        const centerY = (chart.scales.y.min + chart.scales.y.max) / 2;
+        
+        const xRange = (chart.scales.x.max - chart.scales.x.min) * 1.5;
+        const yRange = (chart.scales.y.max - chart.scales.y.min) * 1.5;
+        
+        chart.options.scales.x.min = centerX - xRange / 2;
+        chart.options.scales.x.max = centerX + xRange / 2;
+        chart.options.scales.y.min = centerY - yRange / 2;
+        chart.options.scales.y.max = centerY + yRange / 2;
+        
+        chart.update();
+      });
+      
+      document.getElementById('resetZoom')?.addEventListener('click', () => {
+        chart.options.scales.x.min = defaultScales.x.min;
+        chart.options.scales.x.max = defaultScales.x.max;
+        chart.options.scales.y.min = defaultScales.y.min;
+        chart.options.scales.y.max = defaultScales.y.max;
+        chart.update();
+      });
+      
+      // Table row highlighting and interaction
+      const rows = document.querySelectorAll('.coord-row');
+      rows.forEach((row) => {
+        row.addEventListener('mouseenter', () => {
+          const index = parseInt(row.getAttribute('data-index') || "0");
+          
+          // Highlight the point on chart
+          chart.setActiveElements([{ datasetIndex: 0, index }]);
+          chart.tooltip.setActiveElements([{ datasetIndex: 0, index }], { x: 0, y: 0 });
+          
+          // Update the chart to show the tooltip
+          chart.update();
+        });
+        
+        row.addEventListener('mouseleave', () => {
+          // Remove point highlighting when mouse leaves row
+          chart.setActiveElements([]);
+          chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+          chart.update();
+        });
+        
+        row.addEventListener('click', () => {
+          const index = parseInt(row.getAttribute('data-index') || "0");
+          const point = coordinates[index];
+          
+          // Highlight this row
+          highlightTableRow(index);
+          
+          // Zoom to this point
+          zoomToPoint(chart, point[0], point[1]);
         });
       });
+      
+      // Search functionality
+      const searchInput = document.getElementById('coordSearch');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          const target = e.target;
+          if (target instanceof HTMLInputElement) {
+            const searchTerm = target.value.toLowerCase();
+            
+            rows.forEach(row => {
+              const textContent = row.textContent?.toLowerCase() || '';
+              
+              if (textContent.includes(searchTerm)) {
+                row.style.display = '';
+              } else {
+                row.style.display = 'none';
+              }
+            });
+          }
+        });
+      }
+      
+      // Copy coordinates
+      document.getElementById('copyCoords')?.addEventListener('click', () => {
+        const csv = 'x,y\n' + coordinates.map(([x, y]) => `${x},${y}`).join('\n');
+        
+        navigator.clipboard.writeText(csv).then(() => {
+          const toast = document.getElementById('toast');
+          if (toast) {
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            
+            setTimeout(() => {
+              toast.classList.remove('opacity-100');
+              toast.classList.add('opacity-0');
+            }, 2000);
+          }
+        }).catch(err => {
+          console.error('Failed to copy: ', err);
+          alert('Failed to copy coordinates to clipboard.');
+        });
+      });
+      
+      // Download as CSV
+      document.getElementById('downloadCsv')?.addEventListener('click', () => {
+        const csv = 'x,y\n' + coordinates.map(([x, y]) => `${x},${y}`).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'airfoil-coordinates.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
     }
     
-    // Copy coordinates
-    document.getElementById('copyCoords')?.addEventListener('click', () => {
-      const csv = 'x,y\n' + coordinates.map(([x, y]) => `${x},${y}`).join('\n');
-      
-      navigator.clipboard.writeText(csv).then(() => {
-        const toast = document.getElementById('toast');
-        if (toast) {
-          toast.classList.remove('opacity-0');
-          toast.classList.add('opacity-100');
-          
-          setTimeout(() => {
-            toast.classList.remove('opacity-100');
-            toast.classList.add('opacity-0');
-          }, 2000);
-        }
-      }).catch(err => {
-        console.error('Failed to copy: ', err);
-        alert('Failed to copy coordinates to clipboard.');
-      });
-    });
-    
-    // Download as CSV
-    document.getElementById('downloadCsv')?.addEventListener('click', () => {
-      const csv = 'x,y\n' + coordinates.map(([x, y]) => `${x},${y}`).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'airfoil-coordinates.csv';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
+    // Start initialization process
+    initializeApp();
   });
 </script>

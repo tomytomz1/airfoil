@@ -3,6 +3,7 @@ import AirfoilLayout from '../../layouts/AirfoilLayout.astro';
 import AirfoilBanner from '../../components/airfoil/AirfoilBanner.astro';
 import AirfoilTabs from '../../components/airfoil/AirfoilTabs.astro';
 import MetadataCard from '../../components/airfoil/MetadataCard.astro';
+import WingletConfigCard from '../../components/airfoil/WingletConfigCard.astro';
 import CoordinateDataCard from '../../components/airfoil/CoordinateDataCard.astro';
 import Model3DCard from '../../components/airfoil/Model3DCard.astro';
 import PerformanceCard from '../../components/airfoil/PerformanceCard.astro';
@@ -40,61 +41,10 @@ if (airfoil.name.startsWith('NACA')) {
     thickness = airfoil.name.slice(7, 9);
   }
 }
-
-// Create enhanced metadata
-const enhancedAirfoil = {
-  id: id,
-  name: airfoil.name,
-  description: airfoil.description,
-  family: airfoilFamily,
-  camber: camber,
-  camberPosition: camberPosition,
-  thickness: thickness,
-  thicknessPosition: "30", // Default value
-  leadingEdgeRadius: "1.6", // Estimated
-  coordinates: airfoil.coordinates,
-  // Add simulated performance data
-  performance: {
-    maxCl: "1.45",
-    maxClAoA: "16",
-    zeroLiftAoA: "-2.0",
-    stallAngle: "16",
-    maxLiftDragRatio: "85",
-    minCd: "0.0058",
-    momentCoefficient: "-0.025",
-  },
-  // Add simulated structural data
-  structural: {
-    momentOfInertia: "0.00364",
-    bendingStiffness: "4.23 × 10⁶",
-    maxBendingMoment: "8.45",
-    naturalFrequency: "12.8",
-    fatigueLimit: "10⁶",
-    fatigueLoad: "60",
-    materialCompatibility: ["6061-T6", "Carbon Fiber", "Fiberglass"]
-  },
-  // Add simulated applications
-  applications: ["General Aviation", "UAV", "Low-Speed Aircraft", "Wind Turbine", "RC Model"]
-};
 ---
 
 <AirfoilLayout title={`${airfoil.name} - AeroFoilPro`}>
-  <!-- Breadcrumb Navigation -->
-  <div class="mb-4">
-    <nav class="flex" aria-label="Breadcrumb">
-      <ol class="flex items-center space-x-1 text-sm text-gray-600">
-        <li>
-          <a href="/" class="hover:text-blue-600">Home</a>
-          <span class="mx-1">/</span>
-        </li>
-        <li>
-          <a href="/browse" class="hover:text-blue-600">Browse</a>
-          <span class="mx-1">/</span>
-        </li>
-        <li class="text-gray-900 font-medium">{airfoil.name}</li>
-      </ol>
-    </nav>
-  </div>
+  <!-- Removed Breadcrumb Navigation as requested -->
   
   <AirfoilBanner name={airfoil.name} description={airfoil.description} />
   
@@ -104,8 +54,8 @@ const enhancedAirfoil = {
     <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Left Column -->
       <div class="lg:col-span-2 space-y-6">
-        <MetadataCard name={airfoil.name} />
         <CoordinateDataCard coordinates={airfoil.coordinates} />
+		<MetadataCard name={airfoil.name} />
         <StructuralPropertiesCard name={airfoil.name} />
       </div>
       
@@ -133,6 +83,12 @@ const enhancedAirfoil = {
   <div id="structural-content" class="airfoil-tab-content">
     <div class="mt-6">
       <StructuralPropertiesCard name={airfoil.name} />
+    </div>
+  </div>
+  
+    <div id="winglets-content" class="airfoil-tab-content">
+    <div class="mt-6">
+      <WingletConfigCard airfoilName={airfoil.name} />
     </div>
   </div>
   

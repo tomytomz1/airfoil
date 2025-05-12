@@ -1,0 +1,363 @@
+---
+export interface Props {
+  airfoilName: string;
+}
+
+const { airfoilName } = Astro.props;
+---
+
+<div class="bg-white rounded-lg shadow-sm mb-6">
+  <div class="p-4 border-b border-gray-200">
+    <h2 class="text-lg font-medium text-gray-900">Winglet Configuration</h2>
+  </div>
+  
+  <div class="p-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Winglet Visualization -->
+      <div>
+        <div class="mb-4">
+          <h3 class="text-sm font-medium text-gray-700 mb-2">Winglet Preview</h3>
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 h-64 relative">
+            <canvas id="wingletCanvas" class="w-full h-full"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Winglet Controls -->
+      <div>
+        <h3 class="text-sm font-medium text-gray-700 mb-3">Winglet Parameters</h3>
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
+          <!-- Main winglet angle -->
+          <div>
+            <label for="wingletAngle" class="block text-sm font-medium text-gray-700 mb-1">
+              Winglet Angle (degrees)
+            </label>
+            <div class="flex items-center">
+              <input 
+                type="range" 
+                id="wingletAngle" 
+                min="-90" 
+                max="90" 
+                value="45" 
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <span id="wingletAngleValue" class="ml-3 w-12 text-center">45°</span>
+            </div>
+          </div>
+          
+          <!-- Secondary winglet angle (if using double winglet) -->
+          <div>
+            <label for="secondaryWingletAngle" class="block text-sm font-medium text-gray-700 mb-1">
+              Secondary Winglet Angle (degrees)
+            </label>
+            <div class="flex items-center">
+              <input 
+                type="range" 
+                id="secondaryWingletAngle" 
+                min="-90" 
+                max="90" 
+                value="0"
+                disabled 
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <span id="secondaryWingletAngleValue" class="ml-3 w-12 text-center">0°</span>
+            </div>
+          </div>
+          
+          <!-- Winglet type -->
+          <div>
+            <label for="wingletType" class="block text-sm font-medium text-gray-700 mb-1">
+              Winglet Type
+            </label>
+            <select 
+              id="wingletType" 
+              class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            >
+              <option value="single">Single Winglet</option>
+              <option value="double">Double Winglet</option>
+              <option value="blended">Blended Winglet</option>
+              <option value="raked">Raked Winglet</option>
+              <option value="sharklet">Sharklet</option>
+            </select>
+          </div>
+          
+          <!-- Winglet height -->
+          <div>
+            <label for="wingletHeight" class="block text-sm font-medium text-gray-700 mb-1">
+              Winglet Height (% wingspan)
+            </label>
+            <div class="flex items-center">
+              <input 
+                type="range" 
+                id="wingletHeight" 
+                min="1" 
+                max="15" 
+                value="5" 
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <span id="wingletHeightValue" class="ml-3 w-12 text-center">5%</span>
+            </div>
+          </div>
+          
+          <div class="mt-4 pt-4 border-t border-gray-200">
+            <button id="updateWinglet" class="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700">
+              Update Winglet
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Performance Impact -->
+    <div class="mt-6">
+      <h3 class="text-sm font-medium text-gray-700 mb-2">Estimated Performance Impact</h3>
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <div class="text-gray-500">Drag Reduction</div>
+            <div id="dragReduction" class="font-medium text-blue-600">4.8%</div>
+          </div>
+          <div>
+            <div class="text-gray-500">Efficiency Gain</div>
+            <div id="efficiencyGain" class="font-medium text-blue-600">3.2%</div>
+          </div>
+          <div>
+            <div class="text-gray-500">Range Increase</div>
+            <div id="rangeIncrease" class="font-medium text-blue-600">5.1%</div>
+          </div>
+          <div>
+            <div class="text-gray-500">Fuel Savings</div>
+            <div id="fuelSavings" class="font-medium text-blue-600">2.9%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // DOM elements
+    const wingletCanvas = document.getElementById('wingletCanvas');
+    const wingletAngle = document.getElementById('wingletAngle');
+    const wingletAngleValue = document.getElementById('wingletAngleValue');
+    const secondaryWingletAngle = document.getElementById('secondaryWingletAngle');
+    const secondaryWingletAngleValue = document.getElementById('secondaryWingletAngleValue');
+    const wingletType = document.getElementById('wingletType');
+    const wingletHeight = document.getElementById('wingletHeight');
+    const wingletHeightValue = document.getElementById('wingletHeightValue');
+    const updateWingletBtn = document.getElementById('updateWinglet');
+    
+    // Performance impact elements
+    const dragReduction = document.getElementById('dragReduction');
+    const efficiencyGain = document.getElementById('efficiencyGain');
+    const rangeIncrease = document.getElementById('rangeIncrease');
+    const fuelSavings = document.getElementById('fuelSavings');
+    
+    // Initialize canvas
+    const ctx = wingletCanvas.getContext('2d');
+    
+    // Render winglet visualization
+    function renderWinglet() {
+      if (!ctx) return;
+      
+      const canvasWidth = wingletCanvas.width;
+      const canvasHeight = wingletCanvas.height;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      
+      // Get current winglet parameters
+      const angle = parseInt(wingletAngle.value);
+      const secondaryAngle = parseInt(secondaryWingletAngle.value);
+      const type = wingletType.value;
+      const height = parseInt(wingletHeight.value);
+      
+      // Calculate winglet dimensions
+      const wingWidth = canvasWidth * 0.7;
+      const wingHeight = canvasHeight * 0.1;
+      const wingletHeightPx = wingHeight * (height / 5); // Scale based on percentage
+      
+      // Wing position
+      const wingX = (canvasWidth - wingWidth) / 2;
+      const wingY = canvasHeight / 2;
+      
+      // Draw wing
+      ctx.fillStyle = '#3b82f6'; // Blue color
+      ctx.beginPath();
+      ctx.moveTo(wingX, wingY);
+      ctx.lineTo(wingX + wingWidth, wingY);
+      ctx.lineTo(wingX + wingWidth - 20, wingY + wingHeight);
+      ctx.lineTo(wingX + 20, wingY + wingHeight);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Draw winglet based on type
+      ctx.fillStyle = '#2563eb'; // Darker blue
+      
+      // Convert angles to radians
+      const angleRad = (angle * Math.PI) / 180;
+      const secondaryAngleRad = (secondaryAngle * Math.PI) / 180;
+      
+      // Right wingtip position
+      const wingtipX = wingX + wingWidth;
+      const wingtipY = wingY;
+      
+      if (type === 'single' || type === 'raked' || type === 'sharklet') {
+        // Single winglet
+        ctx.beginPath();
+        ctx.save();
+        ctx.translate(wingtipX, wingtipY);
+        
+        if (type === 'raked') {
+          // Raked winglet (angled extension)
+          const rakeAngle = angleRad * 0.3; // Less extreme angle
+          ctx.rotate(-rakeAngle);
+          ctx.moveTo(0, 0);
+          ctx.lineTo(wingletHeightPx * 0.5, -wingletHeightPx * 0.8);
+          ctx.lineTo(0, -wingletHeightPx);
+          ctx.lineTo(-20, 0);
+        } else if (type === 'sharklet') {
+          // Sharklet (curved design)
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(
+            wingletHeightPx * 0.5, -wingletHeightPx * 0.5,
+            0, -wingletHeightPx
+          );
+          ctx.lineTo(-20, 0);
+        } else {
+          // Standard winglet
+          ctx.rotate(-angleRad);
+          ctx.moveTo(0, 0);
+          ctx.lineTo(0, -wingletHeightPx);
+          ctx.lineTo(-20, 0);
+        }
+        
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      } else if (type === 'double') {
+        // Primary winglet
+        ctx.beginPath();
+        ctx.save();
+        ctx.translate(wingtipX, wingtipY);
+        ctx.rotate(-angleRad);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -wingletHeightPx);
+        ctx.lineTo(-15, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        
+        // Secondary winglet
+        ctx.beginPath();
+        ctx.save();
+        ctx.translate(wingtipX, wingtipY - wingletHeightPx);
+        ctx.rotate(-secondaryAngleRad);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -wingletHeightPx * 0.5);
+        ctx.lineTo(-10, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        
+        // Enable secondary winglet control
+        secondaryWingletAngle.disabled = false;
+      } else if (type === 'blended') {
+        // Blended winglet (curved)
+        ctx.beginPath();
+        ctx.save();
+        ctx.translate(wingtipX, wingtipY);
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(
+          wingletHeightPx * 0.3, -wingletHeightPx * 0.5,
+          0, -wingletHeightPx
+        );
+        ctx.lineTo(-20, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+      
+      // Update performance metrics based on configuration
+      updatePerformanceMetrics(angle, type, height);
+    }
+    
+    // Update performance metrics
+    function updatePerformanceMetrics(angle, type, height) {
+      // These calculations would be more sophisticated in a real application
+      // Simple proxy calculations for demonstration
+      
+      // Base efficiency factor calculated from angle
+      // Maximum efficiency at around 70-80 degrees
+      const angleFactor = 1 - Math.abs(Math.abs(angle) - 75) / 75;
+      
+      // Type factors
+      let typeFactor = 1.0;
+      switch (type) {
+        case 'double': typeFactor = 1.2; break;
+        case 'blended': typeFactor = 1.3; break;
+        case 'raked': typeFactor = 1.15; break;
+        case 'sharklet': typeFactor = 1.25; break;
+        default: typeFactor = 1.0;
+      }
+      
+      // Height factor (taller = more effective, to a point)
+      const heightFactor = Math.min(height / 5, 1.5);
+      
+      // Calculate performance impacts
+      const dragReductionValue = (angleFactor * typeFactor * heightFactor * 5).toFixed(1);
+      const efficiencyGainValue = (angleFactor * typeFactor * heightFactor * 3.5).toFixed(1);
+      const rangeIncreaseValue = (angleFactor * typeFactor * heightFactor * 5.5).toFixed(1);
+      const fuelSavingsValue = (angleFactor * typeFactor * heightFactor * 3).toFixed(1);
+      
+      // Update UI
+      dragReduction.textContent = `${dragReductionValue}%`;
+      efficiencyGain.textContent = `${efficiencyGainValue}%`;
+      rangeIncrease.textContent = `${rangeIncreaseValue}%`;
+      fuelSavings.textContent = `${fuelSavingsValue}%`;
+    }
+    
+    // Event listeners
+    wingletAngle.addEventListener('input', () => {
+      wingletAngleValue.textContent = `${wingletAngle.value}°`;
+      renderWinglet();
+    });
+    
+    secondaryWingletAngle.addEventListener('input', () => {
+      secondaryWingletAngleValue.textContent = `${secondaryWingletAngle.value}°`;
+      renderWinglet();
+    });
+    
+    wingletType.addEventListener('change', () => {
+      // Enable/disable secondary winglet angle based on type
+      if (wingletType.value === 'double') {
+        secondaryWingletAngle.disabled = false;
+      } else {
+        secondaryWingletAngle.disabled = true;
+      }
+      renderWinglet();
+    });
+    
+    wingletHeight.addEventListener('input', () => {
+      wingletHeightValue.textContent = `${wingletHeight.value}%`;
+      renderWinglet();
+    });
+    
+    updateWingletBtn.addEventListener('click', () => {
+      // In a real implementation, this would update the 3D model 
+      // or save configuration to be used in calculations
+      alert('Winglet configuration updated! In a complete implementation, this would update the 3D model and recalculate aerodynamic properties.');
+      
+      // Update button text for feedback
+      const originalText = updateWingletBtn.textContent;
+      updateWingletBtn.textContent = 'Updated!';
+      setTimeout(() => {
+        updateWingletBtn.textContent = originalText;
+      }, 1500);
+    });
+    
+    // Initial render
+    setTimeout(renderWinglet, 100);
+  });
+</script>
