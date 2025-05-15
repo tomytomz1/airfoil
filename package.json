@@ -9,9 +9,12 @@
   },
   "dependencies": {
     "@astrojs/tailwind": "^6.0.2",
+    "@react-three/drei": "^10.0.7",
+    "@react-three/fiber": "^9.1.2",
     "astro": "^5.7.10",
     "chart.js": "^4.4.9",
-    "chartjs-plugin-zoom": "^2.2.0"
+    "chartjs-plugin-zoom": "^2.2.0",
+    "three": "^0.176.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
