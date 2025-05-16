@@ -1,8 +1,11 @@
+---
 export interface Props {
 name: string;
 coordinates: number[][];
 }
 const { name, coordinates } = Astro.props;
+---
+
 <div class="bg-white rounded-lg shadow-sm mb-6" id="3d-content">
   <div class="p-4 border-b border-gray-200 flex justify-between items-center">
     <h2 class="text-lg font-medium text-gray-900">3D Model</h2>
@@ -53,7 +56,7 @@ const { name, coordinates } = Astro.props;
 </script>
 <script define:vars={{ name, coordinates }}>
   // Dynamic import to load the AirfoilViewer component
-  import('./components/airfoil/AirfoilViewer.jsx')
+  import('/src/components/airfoil/AirfoilViewer.jsx')
     .then(module => {
       const container = document.getElementById('airfoil-3d-viewer-container');
       if (container) {

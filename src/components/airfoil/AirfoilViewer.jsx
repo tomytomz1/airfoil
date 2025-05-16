@@ -1,4 +1,3 @@
----
 // src/components/airfoil/AirfoilViewer.jsx
 // This is a React component that will be client-side rendered in Astro
 
