@@ -1,6 +1,4 @@
 // src/components/airfoil/AirfoilViewer.jsx
-// This is a React component that will be client-side rendered in Astro
-
 import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
@@ -84,48 +82,39 @@ const AirfoilViewer = ({ name, coordinates, description = "" }) => {
   }, [name]);
   
   // --- Derived Calculations ---
-	const taperRatio = tipChord / rootChord;
-	const wingArea = (rootChord + tipChord) * wingspan / 2;
-	const aspectRatio = (wingspan * wingspan) / wingArea;
-	const meanAerodynamicChord = (2/3) * rootChord * ((1 + taperRatio + taperRatio*taperRatio) / (1 + taperRatio));
-	const wingLoading = 80 * 9.81 / wingArea; // Assuming 80kg aircraft weight
+  const taperRatio = tipChord / rootChord;
+  const wingArea = (rootChord + tipChord) * wingspan / 2;
+  const aspectRatio = (wingspan * wingspan) / wingArea;
+  const meanAerodynamicChord = (2/3) * rootChord * ((1 + taperRatio + taperRatio*taperRatio) / (1 + taperRatio));
+  const wingLoading = 80 * 9.81 / wingArea; // Assuming 80kg aircraft weight
 
-	// Aerodynamic estimates
-	const estimatedStallSpeed = Math.sqrt((2 * wingLoading) / (1.225 * 1.4)).toFixed(1);
-	const estimatedMaxLD = (aspectRatio * 0.9).toFixed(1);
+  // Aerodynamic estimates
+  const estimatedStallSpeed = Math.sqrt((2 * wingLoading) / (1.225 * 1.4)).toFixed(1);
+  const estimatedMaxLD = (aspectRatio * 0.9).toFixed(1);
 
-	// State for active accordion sections 
-	const [activeSections, setActiveSections] = useState({
-	  wingConfig: true,
-	  visualization: false,
-	  materials: false,
-	  winglets: false,
-	  export: false
-	});
+  // Toggle accordion sections
+  const toggleSection = (section) => {
+    setActiveSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
-	// Toggle accordion sections
-	const toggleSection = (section) => {
-	  setActiveSections(prev => ({
-		...prev,
-		[section]: !prev[section]
-	  }));
-	};
+  // Handle model updates
+  const handleUpdateModel = () => {
+    // Update 3D model based on wing configuration
+    setCurrentChordLength(rootChord);
+    setCurrentWingLength(wingspan / 2); // Half wingspan for the model
+    createAirfoilModel();
+  };
 
-	// Handle model updates
-	const handleUpdateModel = () => {
-	  // Update 3D model based on wing configuration
-	  setCurrentChordLength(rootChord);
-	  setCurrentWingLength(wingspan / 2); // Half wingspan for the model
-	  createAirfoilModel();
-	};
-
-	// Handle view reset
-	const handleResetView = () => {
-	  if (cameraRef.current) {
-		cameraRef.current.position.set(3, 2.5, 3);
-		cameraRef.current.lookAt(0, 0, 0);
-	  }
-	};
+  // Handle view reset
+  const handleResetView = () => {
+    if (cameraRef.current) {
+      cameraRef.current.position.set(3, 2.5, 3);
+      cameraRef.current.lookAt(0, 0, 0);
+    }
+  };
   
   // Calculate performance impact of winglets
   const getWingletPerformance = () => {
@@ -772,21 +761,6 @@ const AirfoilViewer = ({ name, coordinates, description = "" }) => {
     setupLighting(lightingPreset);
   }, [lightingPreset]);
   
-  // --- Handler Functions ---
-  const handleUpdateModel = () => {
-    // Update 3D model based on wing configuration
-    setCurrentChordLength(rootChord);
-    setCurrentWingLength(wingspan / 2); // Half wingspan for the model
-    createAirfoilModel();
-  };
-  
-  const handleResetView = () => {
-    if (cameraRef.current) {
-      cameraRef.current.position.set(3, 2.5, 3);
-      cameraRef.current.lookAt(0, 0, 0);
-    }
-  };
-  
   const handleExportModel = () => {
     // Trigger the download function in the parent component
     if (window.triggerSTLDownload) {
@@ -796,564 +770,557 @@ const AirfoilViewer = ({ name, coordinates, description = "" }) => {
     }
   };
   
-  // Toggle accordion sections
-  const toggleSection = (section) => {
-    setActiveSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
-  
   return (
-  <div className="p-0">
-    {/* Top Section: 3D Viewer and Quick Controls */}
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-      {/* 3D Viewer - Takes 3/4 of the width on large screens */}
-      <div className="lg:col-span-3">
-        <div 
-          className="h-96 bg-gray-50 border border-gray-200 rounded-lg relative" 
-          ref={mountRef}
-        >
-          {/* Model Controls */}
-          <div className="absolute bottom-3 right-3 flex space-x-1 bg-white/60 backdrop-blur-sm p-1 rounded">
-            <button 
-              onClick={handleResetView} 
-              className="bg-white text-gray-700 p-1 rounded border border-gray-300 hover:bg-gray-100" 
-              title="Reset View"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-              </svg>
-            </button>
-            <button 
-              onClick={() => setShowWireframe(!showWireframe)} 
-              className={`${showWireframe ? 'bg-blue-100 text-blue-800' : 'bg-white text-gray-700'} p-1 rounded border border-gray-300 hover:bg-gray-100`} 
-              title="Toggle Wireframe"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
-              </svg>
-            </button>
-            <button 
-              onClick={() => setShowFlowLines(!showFlowLines)} 
-              className={`${showFlowLines ? 'bg-blue-100 text-blue-800' : 'bg-white text-gray-700'} p-1 rounded border border-gray-300 hover:bg-gray-100`} 
-              title="Toggle Flow Lines"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
-              </svg>
-            </button>
-          </div>
-          
-          {/* Controls Information Overlay */}
-          <div className="absolute top-2 left-2 text-xs text-white bg-black/50 p-1 rounded">
-            <div>Left-click: Rotate | Right-click: Pan | Scroll: Zoom</div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Performance Metrics and Quick Controls Panel */}
-      <div className="lg:col-span-1">
-        {/* Performance Metrics */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Wing Performance</h3>
-          <div className="grid grid-cols-2 gap-y-2 text-sm">
-            <div className="text-gray-600">Aspect Ratio:</div>
-            <div className="font-medium text-gray-900">{aspectRatio.toFixed(2)}</div>
+    <div className="p-0">
+      {/* Top Section: 3D Viewer and Quick Controls */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+        {/* 3D Viewer - Takes 3/4 of the width on large screens */}
+        <div className="lg:col-span-3">
+          <div 
+            className="h-96 bg-gray-50 border border-gray-200 rounded-lg relative" 
+            ref={mountRef}
+          >
+            {/* Model Controls */}
+            <div className="absolute bottom-3 right-3 flex space-x-1 bg-white/60 backdrop-blur-sm p-1 rounded">
+              <button 
+                onClick={handleResetView} 
+                className="bg-white text-gray-700 p-1 rounded border border-gray-300 hover:bg-gray-100" 
+                title="Reset View"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+              </button>
+              <button 
+                onClick={() => setShowWireframe(!showWireframe)} 
+                className={`${showWireframe ? 'bg-blue-100 text-blue-800' : 'bg-white text-gray-700'} p-1 rounded border border-gray-300 hover:bg-gray-100`} 
+                title="Toggle Wireframe"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                </svg>
+              </button>
+              <button 
+                onClick={() => setShowFlowLines(!showFlowLines)} 
+                className={`${showFlowLines ? 'bg-blue-100 text-blue-800' : 'bg-white text-gray-700'} p-1 rounded border border-gray-300 hover:bg-gray-100`} 
+                title="Toggle Flow Lines"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
+                </svg>
+              </button>
+            </div>
             
-            <div className="text-gray-600">Taper Ratio:</div>
-            <div className="font-medium text-gray-900">{taperRatio.toFixed(2)}</div>
-            
-            <div className="text-gray-600">Wing Area:</div>
-            <div className="font-medium text-gray-900">{wingArea.toFixed(2)} m²</div>
-            
-            <div className="text-gray-600">Wing Loading:</div>
-            <div className="font-medium text-gray-900">{wingLoading.toFixed(1)} N/m²</div>
-            
-            <div className="text-gray-600">Est. Stall Speed:</div>
-            <div className="font-medium text-gray-900">{estimatedStallSpeed} km/h</div>
-            
-            <div className="text-gray-600">Est. Max L/D:</div>
-            <div className="font-medium text-gray-900">{estimatedMaxLD}</div>
+            {/* Controls Information Overlay */}
+            <div className="absolute top-2 left-2 text-xs text-white bg-black/50 p-1 rounded">
+              <div>Left-click: Rotate | Right-click: Pan | Scroll: Zoom</div>
+            </div>
           </div>
         </div>
         
-        {/* Quick Control Buttons */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Quick Controls</h3>
+        {/* Performance Metrics and Quick Controls Panel */}
+        <div className="lg:col-span-1">
+          {/* Performance Metrics */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Wing Performance</h3>
+            <div className="grid grid-cols-2 gap-y-2 text-sm">
+              <div className="text-gray-600">Aspect Ratio:</div>
+              <div className="font-medium text-gray-900">{aspectRatio.toFixed(2)}</div>
+              
+              <div className="text-gray-600">Taper Ratio:</div>
+              <div className="font-medium text-gray-900">{taperRatio.toFixed(2)}</div>
+              
+              <div className="text-gray-600">Wing Area:</div>
+              <div className="font-medium text-gray-900">{wingArea.toFixed(2)} m²</div>
+              
+              <div className="text-gray-600">Wing Loading:</div>
+              <div className="font-medium text-gray-900">{wingLoading.toFixed(1)} N/m²</div>
+              
+              <div className="text-gray-600">Est. Stall Speed:</div>
+              <div className="font-medium text-gray-900">{estimatedStallSpeed} km/h</div>
+              
+              <div className="text-gray-600">Est. Max L/D:</div>
+              <div className="font-medium text-gray-900">{estimatedMaxLD}</div>
+            </div>
+          </div>
           
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-600">Chord Length:</span>
-                <span className="text-gray-800 font-medium">{currentChordLength.toFixed(1)} m</span>
+          {/* Quick Control Buttons */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Quick Controls</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-600">Chord Length:</span>
+                  <span className="text-gray-800 font-medium">{currentChordLength.toFixed(1)} m</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="2.0"
+                  step="0.1"
+                  value={currentChordLength}
+                  onChange={(e) => setCurrentChordLength(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                />
               </div>
-              <input
-                type="range"
-                min="0.5"
-                max="2.0"
-                step="0.1"
-                value={currentChordLength}
-                onChange={(e) => setCurrentChordLength(parseFloat(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-            
-            {/* Wing Length Slider */}
-            <div>
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-600">Wing Length:</span>
-                <span className="text-gray-800 font-medium">{currentWingLength.toFixed(1)} m</span>
+              
+              {/* Wing Length Slider */}
+              <div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-600">Wing Length:</span>
+                  <span className="text-gray-800 font-medium">{currentWingLength.toFixed(1)} m</span>
+                </div>
+                <input
+                  type="range"
+                  min="1.0"
+                  max="10.0"
+                  step="0.5"
+                  value={currentWingLength}
+                  onChange={(e) => setCurrentWingLength(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                />
               </div>
-              <input
-                type="range"
-                min="1.0"
-                max="10.0"
-                step="0.5"
-                value={currentWingLength}
-                onChange={(e) => setCurrentWingLength(parseFloat(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-            
-            {/* Visualization Toggles */}
-            <div className="flex space-x-2 pt-1">
+              
+              {/* Visualization Toggles */}
+              <div className="flex space-x-2 pt-1">
+                <button
+                  onClick={() => setShowWireframe(!showWireframe)}
+                  className={`flex-1 px-2 py-1 rounded-md text-xs font-medium ${
+                    showWireframe 
+                      ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+                      : 'bg-gray-100 text-gray-700 border border-gray-200'
+                  }`}
+                >
+                  Wireframe
+                </button>
+                <button
+                  onClick={() => setShowFlowLines(!showFlowLines)}
+                  className={`flex-1 px-2 py-1 rounded-md text-xs font-medium ${
+                    showFlowLines 
+                      ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+                      : 'bg-gray-100 text-gray-700 border border-gray-200'
+                  }`}
+                >
+                  Flow Lines
+                </button>
+              </div>
+              
+              {/* Update Model Button */}
               <button
-                onClick={() => setShowWireframe(!showWireframe)}
-                className={`flex-1 px-2 py-1 rounded-md text-xs font-medium ${
-                  showWireframe 
-                    ? 'bg-blue-100 text-blue-800 border border-blue-200' 
-                    : 'bg-gray-100 text-gray-700 border border-gray-200'
-                }`}
+                onClick={handleUpdateModel}
+                className="w-full mt-2 px-3 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
               >
-                Wireframe
-              </button>
-              <button
-                onClick={() => setShowFlowLines(!showFlowLines)}
-                className={`flex-1 px-2 py-1 rounded-md text-xs font-medium ${
-                  showFlowLines 
-                    ? 'bg-blue-100 text-blue-800 border border-blue-200' 
-                    : 'bg-gray-100 text-gray-700 border border-gray-200'
-                }`}
-              >
-                Flow Lines
+                Update Model
               </button>
             </div>
-            
-            {/* Update Model Button */}
-            <button
-              onClick={handleUpdateModel}
-              className="w-full mt-2 px-3 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
-            >
-              Update Model
-            </button>
           </div>
         </div>
       </div>
-    </div>
-    
-    {/* Wing Configuration Section */}
-    <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
-      <button 
-        className="w-full p-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 text-left"
-        onClick={() => toggleSection('wingConfig')}
-      >
-        <h3 className="text-sm font-medium text-gray-800">Wing Configuration</h3>
-        <svg 
-          className={`w-5 h-5 text-gray-500 transition-transform ${activeSections.wingConfig ? 'rotate-180' : ''}`} 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24" 
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
-      </button>
       
-      {activeSections.wingConfig && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Wingspan (m)
-              </label>
-              <input
-                type="number"
-                min="0.1"
-                max="50"
-                step="0.1"
-                value={wingspan}
-                onChange={(e) => setWingspan(parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Root Chord (m)
-              </label>
-              <input
-                type="number"
-                min="0.05"
-                max="10"
-                step="0.05"
-                value={rootChord}
-                onChange={(e) => setRootChord(parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Tip Chord (m)
-              </label>
-              <input
-                type="number"
-                min="0.05"
-                max="10"
-                step="0.05"
-                value={tipChord}
-                onChange={(e) => setTipChord(parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Sweep Angle (deg)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="45"
-                step="1"
-                value={sweepAngle}
-                onChange={(e) => setSweepAngle(parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Dihedral Angle (deg)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="15"
-                step="0.5"
-                value={dihedralAngle}
-                onChange={(e) => setDihedralAngle(parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Twist Angle (deg)
-              </label>
-              <input
-                type="number"
-                min="-10"
-                max="10"
-                step="0.5"
-                value={twistAngle}
-                onChange={(e) => setTwistAngle(parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Camber (%)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="10"
-                step="0.1"
-                value={camber}
-                onChange={(e) => setCamber(parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Thickness (%)
-              </label>
-              <input
-                type="number"
-                min="5"
-                max="30"
-                step="0.5"
-                value={thickness}
-                onChange={(e) => setThickness(parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              />
-            </div>
-          </div>
-          
-          <div className="mt-4">
-            <button
-              onClick={handleUpdateModel}
-              className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
-            >
-              Update 3D Model
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-    
-    {/* Visualization Options Section */}
-    <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
-      <button 
-        className="w-full p-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 text-left"
-        onClick={() => toggleSection('visualization')}
-      >
-        <h3 className="text-sm font-medium text-gray-800">Visualization Options</h3>
-        <svg 
-          className={`w-5 h-5 text-gray-500 transition-transform ${activeSections.visualization ? 'rotate-180' : ''}`} 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24" 
-          xmlns="http://www.w3.org/2000/svg"
+      {/* Wing Configuration Section */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+        <button 
+          className="w-full p-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 text-left"
+          onClick={() => toggleSection('wingConfig')}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
-      </button>
-      
-      {activeSections.visualization && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Display Options</h4>
-              <div className="space-y-2">
-                <label className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    checked={showWireframe}
-                    onChange={(e) => setShowWireframe(e.target.checked)}
-                    className="mr-2 h-4 w-4"
-                  />
-                  <span className="text-sm text-gray-700">Show Wireframe</span>
+          <h3 className="text-sm font-medium text-gray-800">Wing Configuration</h3>
+          <svg 
+            className={`w-5 h-5 text-gray-500 transition-transform ${activeSections.wingConfig ? 'rotate-180' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+        
+        {activeSections.wingConfig && (
+          <div className="p-4 border-t border-gray-200">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Wingspan (m)
                 </label>
-                <label className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    checked={showFlowLines}
-                    onChange={(e) => setShowFlowLines(e.target.checked)}
-                    className="mr-2 h-4 w-4"
-                  />
-                  <span className="text-sm text-gray-700">Show Flow Visualization</span>
+                <input
+                  type="number"
+                  min="0.1"
+                  max="50"
+                  step="0.1"
+                  value={wingspan}
+                  onChange={(e) => setWingspan(parseFloat(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Root Chord (m)
                 </label>
+                <input
+                  type="number"
+                  min="0.05"
+                  max="10"
+                  step="0.05"
+                  value={rootChord}
+                  onChange={(e) => setRootChord(parseFloat(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Tip Chord (m)
+                </label>
+                <input
+                  type="number"
+                  min="0.05"
+                  max="10"
+                  step="0.05"
+                  value={tipChord}
+                  onChange={(e) => setTipChord(parseFloat(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Sweep Angle (deg)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="45"
+                  step="1"
+                  value={sweepAngle}
+                  onChange={(e) => setSweepAngle(parseFloat(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Dihedral Angle (deg)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="15"
+                  step="0.5"
+                  value={dihedralAngle}
+                  onChange={(e) => setDihedralAngle(parseFloat(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Twist Angle (deg)
+                </label>
+                <input
+                  type="number"
+                  min="-10"
+                  max="10"
+                  step="0.5"
+                  value={twistAngle}
+                  onChange={(e) => setTwistAngle(parseFloat(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Camber (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  step="0.1"
+                  value={camber}
+                  onChange={(e) => setCamber(parseFloat(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Thickness (%)
+                </label>
+                <input
+                  type="number"
+                  min="5"
+                  max="30"
+                  step="0.5"
+                  value={thickness}
+                  onChange={(e) => setThickness(parseFloat(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                />
               </div>
             </div>
             
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Rendering Settings</h4>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Lighting Preset</label>
-                  <select 
-                    value={lightingPreset}
-                    onChange={(e) => setLightingPreset(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value="studio">Studio Lighting</option>
-                    <option value="outdoor">Outdoor Lighting</option>
-                    <option value="technical">Technical Lighting</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Mesh Quality</label>
-                  <select 
-                    value={meshQuality}
-                    onChange={(e) => setMeshQuality(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value="low">Low (Faster)</option>
-                    <option value="medium">Medium (Balanced)</option>
-                    <option value="high">High (Detailed)</option>
-                  </select>
-                </div>
-              </div>
+            <div className="mt-4">
+              <button
+                onClick={handleUpdateModel}
+                className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
+              >
+                Update 3D Model
+              </button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-    
-    {/* Materials Section */}
-    <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
-      <button 
-        className="w-full p-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 text-left"
-        onClick={() => toggleSection('materials')}
-      >
-        <h3 className="text-sm font-medium text-gray-800">Materials & Surface Properties</h3>
-        <svg 
-          className={`w-5 h-5 text-gray-500 transition-transform ${activeSections.materials ? 'rotate-180' : ''}`} 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24" 
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
-      </button>
+        )}
+      </div>
       
-      {activeSections.materials && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Surface Properties</h4>
+      {/* Visualization Options Section */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+        <button 
+          className="w-full p-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 text-left"
+          onClick={() => toggleSection('visualization')}
+        >
+          <h3 className="text-sm font-medium text-gray-800">Visualization Options</h3>
+          <svg 
+            className={`w-5 h-5 text-gray-500 transition-transform ${activeSections.visualization ? 'rotate-180' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+        
+        {activeSections.visualization && (
+          <div className="p-4 border-t border-gray-200">
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Display Options</h4>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input 
+                      type="checkbox" 
+                      checked={showWireframe}
+                      onChange={(e) => setShowWireframe(e.target.checked)}
+                      className="mr-2 h-4 w-4"
+                    />
+                    <span className="text-sm text-gray-700">Show Wireframe</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input 
+                      type="checkbox" 
+                      checked={showFlowLines}
+                      onChange={(e) => setShowFlowLines(e.target.checked)}
+                      className="mr-2 h-4 w-4"
+                    />
+                    <span className="text-sm text-gray-700">Show Flow Visualization</span>
+                  </label>
+                </div>
+              </div>
               
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Material Color</label>
-                  <div className="flex items-center">
-                    <input 
-                      type="color" 
-                      value={materialColor}
-                      onChange={(e) => setMaterialColor(e.target.value)}
-                      className="mr-2 h-8 w-8 rounded border border-gray-300"
-                    />
-                    <input 
-                      type="text" 
-                      value={materialColor}
-                      onChange={(e) => setMaterialColor(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    />
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Rendering Settings</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Lighting Preset</label>
+                    <select 
+                      value={lightingPreset}
+                      onChange={(e) => setLightingPreset(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="studio">Studio Lighting</option>
+                      <option value="outdoor">Outdoor Lighting</option>
+                      <option value="technical">Technical Lighting</option>
+                    </select>
                   </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <span>Surface Roughness:</span>
-                    <span>{surfaceRoughness.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-xs text-gray-500 w-16">Smooth</span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={surfaceRoughness}
-                      onChange={(e) => setSurfaceRoughness(parseFloat(e.target.value))}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mx-2"
-                    />
-                    <span className="text-xs text-gray-500 w-16 text-right">Rough</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <span>Material Metalness:</span>
-                    <span>{materialMetalness.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-xs text-gray-500 w-16">Non-metallic</span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={materialMetalness}
-                      onChange={(e) => setMaterialMetalness(parseFloat(e.target.value))}
-                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mx-2"
-                    />
-                    <span className="text-xs text-gray-500 w-16 text-right">Metallic</span>
+                  
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Mesh Quality</label>
+                    <select 
+                      value={meshQuality}
+                      onChange={(e) => setMeshQuality(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="low">Low (Faster)</option>
+                      <option value="medium">Medium (Balanced)</option>
+                      <option value="high">High (Detailed)</option>
+                    </select>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-    
-    {/* Winglet Configuration Section */}
-    <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
-      <button 
-        className="w-full p-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 text-left"
-        onClick={() => toggleSection('winglets')}
-      >
-        <h3 className="text-sm font-medium text-gray-800">Winglet Configuration</h3>
-        <svg 
-          className={`w-5 h-5 text-gray-500 transition-transform ${activeSections.winglets ? 'rotate-180' : ''}`} 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24" 
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
-      </button>
+        )}
+      </div>
       
-      {activeSections.winglets && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="space-y-4">
-            <label className="flex items-center">
-              <input 
-                type="checkbox" 
-                checked={hasWinglets}
-                onChange={(e) => setHasWinglets(e.target.checked)}
-                className="mr-2 h-4 w-4"
-              />
-              <span className="text-sm font-medium text-gray-700">Enable Winglets</span>
-            </label>
-            
-            {hasWinglets && (
-              <div className="space-y-3 mt-2 pl-6">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Winglet Type</label>
-                  <select 
-                    value={wingletType}
-                    onChange={(e) => setWingletType(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value="Standard Winglet">Standard Winglet</option>
-                    <option value="Split Scimitar Winglet">Split Scimitar Winglet</option>
-                    <option value="Blended Winglet">Blended Winglet</option>
-                    <option value="Raked Winglet">Raked Winglet</option>
-                    <option value="Sharklet">Sharklet</option>
-                  </select>
-                </div>
+      {/* Materials Section */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+        <button 
+          className="w-full p-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 text-left"
+          onClick={() => toggleSection('materials')}
+        >
+          <h3 className="text-sm font-medium text-gray-800">Materials & Surface Properties</h3>
+          <svg 
+            className={`w-5 h-5 text-gray-500 transition-transform ${activeSections.materials ? 'rotate-180' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+        
+        {activeSections.materials && (
+          <div className="p-4 border-t border-gray-200">
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Surface Properties</h4>
                 
-                <div>
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <span>Winglet Angle (degrees):</span>
-                    <span>{wingletAngle}°</span>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Material Color</label>
+                    <div className="flex items-center">
+                      <input 
+                        type="color" 
+                        value={materialColor}
+                        onChange={(e) => setMaterialColor(e.target.value)}
+                        className="mr-2 h-8 w-8 rounded border border-gray-300"
+                      />
+                      <input 
+                        type="text" 
+                        value={materialColor}
+                        onChange={(e) => setMaterialColor(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      />
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="90"
-                    step="1"
-                    value={wingletAngle}
-                    onChange={(e) => setWingletAngle(parseInt(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-                
-                <div>
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <span>Winglet Height (% wingspan):</span>
-                    <span>{wingletHeight}%</span>
+                  
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span>Surface Roughness:</span>
+                      <span>{surfaceRoughness.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-xs text-gray-500 w-16">Smooth</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={surfaceRoughness}
+                        onChange={(e) => setSurfaceRoughness(parseFloat(e.target.value))}
+                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mx-2"
+                      />
+                      <span className="text-xs text-gray-500 w-16 text-right">Rough</span>
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="15"
-                    step="1"
-                    value={wingletHeight}
-                    onChange={(e) => setWingletHeight(parseInt(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
+                  
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span>Material Metalness:</span>
+                      <span>{materialMetalness.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-xs text-gray-500 w-16">Non-metallic</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={materialMetalness}
+                        onChange={(e) => setMaterialMetalness(parseFloat(e.target.value))}
+                        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mx-2"
+                      />
+                      <span className="text-xs text-gray-500 w-16 text-right">Metallic</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+      
+      {/* Winglet Configuration Section */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+        <button 
+          className="w-full p-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 text-left"
+          onClick={() => toggleSection('winglets')}
+        >
+          <h3 className="text-sm font-medium text-gray-800">Winglet Configuration</h3>
+          <svg 
+            className={`w-5 h-5 text-gray-500 transition-transform ${activeSections.winglets ? 'rotate-180' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </button>
+        
+        {activeSections.winglets && (
+          <div className="p-4 border-t border-gray-200">
+            <div className="space-y-4">
+              <label className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  checked={hasWinglets}
+                  onChange={(e) => setHasWinglets(e.target.checked)}
+                  className="mr-2 h-4 w-4"
+                />
+                <span className="text-sm font-medium text-gray-700">Enable Winglets</span>
+              </label>
+              
+              {hasWinglets && (
+                <div className="space-y-3 mt-2 pl-6">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Winglet Type</label>
+                    <select 
+                      value={wingletType}
+                      onChange={(e) => setWingletType(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="Standard Winglet">Standard Winglet</option>
+                      <option value="Split Scimitar Winglet">Split Scimitar Winglet</option>
+                      <option value="Blended Winglet">Blended Winglet</option>
+                      <option value="Raked Winglet">Raked Winglet</option>
+                      <option value="Sharklet">Sharklet</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span>Winglet Angle (degrees):</span>
+                      <span>{wingletAngle}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="90"
+                      step="1"
+                      value={wingletAngle}
+                      onChange={(e) => setWingletAngle(parseInt(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span>Winglet Height (% wingspan):</span>
+                      <span>{wingletHeight}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="15"
+                      step="1"
+                      value={wingletHeight}
+                      onChange={(e) => setWingletHeight(parseInt(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default AirfoilViewer;
