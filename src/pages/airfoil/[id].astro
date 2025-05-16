@@ -9,28 +9,21 @@ import Model3DCard from '../../components/airfoil/Model3DCard.astro';
 import PerformanceCard from '../../components/airfoil/PerformanceCard.astro';
 import DragPolarCard from '../../components/airfoil/DragPolarCard.astro';
 import StructuralPropertiesCard from '../../components/airfoil/StructuralPropertiesCard.astro';
-
 import airfoils from '../../data/airfoils.json';
-
 export const prerender = true;
-
 export async function getStaticPaths() {
   return Object.keys(airfoils).map((id) => ({ params: { id } }));
 }
-
 const { id } = Astro.params;
 const airfoil = airfoils[id];
-
 if (!airfoil) {
   throw new Error(`Airfoil not found for ID: ${id}`);
 }
-
 // Extract airfoil family, camber and thickness from name (for NACA airfoils)
 let airfoilFamily = 'Unknown';
 let camber = '0';
 let camberPosition = '0';
 let thickness = '12';
-
 if (airfoil.name.startsWith('NACA')) {
   airfoilFamily = 'NACA';
   
@@ -42,7 +35,6 @@ if (airfoil.name.startsWith('NACA')) {
   }
 }
 ---
-
 <AirfoilLayout title={`${airfoil.name} - AeroFoilPro`}>
   <!-- Removed Breadcrumb Navigation as requested -->
   
@@ -50,21 +42,11 @@ if (airfoil.name.startsWith('NACA')) {
   
   <AirfoilTabs />
   
+  <!-- Add back the geometry-content section with only CoordinateDataCard and MetadataCard -->
   <div id="geometry-content" class="airfoil-tab-content active">
-    <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Left Column -->
-      <div class="lg:col-span-2 space-y-6">
-        <CoordinateDataCard coordinates={airfoil.coordinates} />
-		<MetadataCard name={airfoil.name} />
-        <StructuralPropertiesCard name={airfoil.name} />
-      </div>
-      
-      <!-- Right Column -->
-      <div class="space-y-6">
-        <Model3DCard name={airfoil.name} coordinates={airfoil.coordinates} />
-        <PerformanceCard name={airfoil.name} />
-        <DragPolarCard name={airfoil.name} />
-      </div>
+    <div class="mt-6 space-y-6">
+      <CoordinateDataCard coordinates={airfoil.coordinates} />
+      <MetadataCard name={airfoil.name} />
     </div>
   </div>
   
@@ -86,7 +68,7 @@ if (airfoil.name.startsWith('NACA')) {
     </div>
   </div>
   
-    <div id="winglets-content" class="airfoil-tab-content">
+  <div id="winglets-content" class="airfoil-tab-content">
     <div class="mt-6">
       <WingletConfigCard airfoilName={airfoil.name} />
     </div>
