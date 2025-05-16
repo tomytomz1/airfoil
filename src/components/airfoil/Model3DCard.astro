@@ -1,7 +1,9 @@
 ---
+import AirfoilViewer from "../../components/airfoil/AirfoilViewer.jsx";
+
 export interface Props {
-name: string;
-coordinates: number[][];
+  name: string;
+  coordinates: number[][];
 }
 const { name, coordinates } = Astro.props;
 ---
@@ -9,36 +11,27 @@ const { name, coordinates } = Astro.props;
 <div class="bg-white rounded-lg shadow-sm mb-6" id="3d-content">
   <div class="p-4 border-b border-gray-200 flex justify-between items-center">
     <h2 class="text-lg font-medium text-gray-900">3D Model</h2>
-<div class="flex space-x-2">
-  <button id="download3D" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
-    <span class="flex items-center">
-      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-      </svg>
-      Download STL
-    </span>
-  </button>
-</div>
-  </div>
-  <div class="p-4">
-    <!-- Fixed layout to match screenshot -->
-    <div class="flex space-x-5">
-      <button id="downloadSTL" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+    <div class="flex space-x-2">
+      <button id="download3D" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
         <span class="flex items-center">
           <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 17l-4 4m0 0l-4-4m4 4V3"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
           </svg>
           Download STL
         </span>
       </button>
     </div>
-<!-- React component container -->
-<div id="airfoil-3d-viewer-container" class="mt-4"></div>
+  </div>
+  
+  <div class="p-4">
+    <!-- React component with client hydration -->
+    <AirfoilViewer client:only="react" name={name} coordinates={coordinates} />
   </div>
 </div>
+
 <!-- Script to handle download button clicks -->
 <script>
-  // Set up global download handler for the React component to use
+  // Set up global download handler
   window.triggerSTLDownload = function() {
     alert('Downloading STL file: ' + document.title);
   };
@@ -46,34 +39,5 @@ const { name, coordinates } = Astro.props;
   // Button click handlers
   document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('download3D')?.addEventListener('click', window.triggerSTLDownload);
-    document.getElementById('downloadSTL')?.addEventListener('click', window.triggerSTLDownload);
   });
-</script>
-<!-- Import and mount the AirfoilViewer component -->
-<script>
-  import { createRoot } from 'react-dom/client';
-  import { createElement } from 'react';
-</script>
-<script define:vars={{ name, coordinates }}>
-  // Dynamic import to load the AirfoilViewer component
-  import('/src/components/airfoil/AirfoilViewer.jsx')
-    .then(module => {
-      const container = document.getElementById('airfoil-3d-viewer-container');
-      if (container) {
-        const root = createRoot(container);
-        root.render(createElement(module.default, { 
-          name: name, 
-          coordinates: coordinates
-        }));
-      }
-    })
-    .catch(error => {
-      console.error('Error loading AirfoilViewer component:', error);
-      document.getElementById('airfoil-3d-viewer-container').innerHTML = `
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4">
-          <p class="font-bold">Error loading 3D viewer</p>
-          <p>${error.message}</p>
-        </div>
-      `;
-    });
 </script>
