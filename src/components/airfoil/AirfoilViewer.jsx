@@ -265,7 +265,7 @@ const AirfoilViewer = ({ name, coordinates, description = "" }) => {
         rendererRef.current.dispose();
       }
     };
-  }, []);
+  }, [mountRef.current, coordinates, name, lightingPreset]);
   
   // Setup lighting based on preset
   const setupLighting = (preset) => {

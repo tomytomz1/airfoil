@@ -1,0 +1,136 @@
+---
+import type { Airfoil } from '../../types';
+
+interface Props {
+  popularAirfoils: Airfoil[];
+  applications: string[];
+}
+
+const { popularAirfoils, applications } = Astro.props;
+---
+
+<aside class="md:w-64 flex-shrink-0" role="complementary">
+  <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-medium text-gray-900">Collections</h2>
+    </div>
+
+    <!-- Recently Viewed -->
+    <div>
+      <h3 class="font-medium text-blue-600">Recently Viewed</h3>
+      <ul id="recentlyViewed" class="space-y-2 mt-2" role="list"></ul>
+    </div>
+    
+    <!-- Favorites -->
+    <div class="border-t border-gray-200 my-3 pt-3">
+      <h3 class="font-medium text-blue-600">Favorites</h3>
+      <ul id="favorites" class="space-y-2 mt-2" role="list"></ul>
+    </div>
+    
+    <!-- Popular Airfoils -->
+    <div class="border-t border-gray-200 my-3 pt-3">
+      <h3 class="font-medium text-blue-600">Popular Airfoils</h3>
+      <ul class="space-y-2 mt-2" role="list">
+        {popularAirfoils.map(airfoil => (
+          <li class="pl-2 text-gray-700">
+            <a 
+              href={`/airfoil/${airfoil.id}`} 
+              class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+            >
+              {airfoil.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+    
+    <!-- Applications -->
+    <div class="border-t border-gray-200 my-3 pt-3">
+      <h3 class="font-medium text-blue-600">Applications</h3>
+      <ul class="space-y-2 mt-2" role="list">
+        {applications.map(app => (
+          <li class="pl-2 text-gray-700">
+            <button 
+              class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+              data-application={app}
+            >
+              {app}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+    
+    <!-- Insights -->
+    <div class="border-t border-gray-200 my-3 pt-3">
+      <h3 class="font-medium text-blue-600">Insights</h3>
+      <div class="mt-2 p-3 bg-blue-50 rounded-md">
+        <p class="text-sm text-gray-700">
+          Similar to Clark Y? Try the Selig S1223 for higher lift capacity.
+        </p>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<script>
+function waitForStorageAndDOM(callback) {
+  if (
+    window.storage &&
+    document.getElementById('recentlyViewed') &&
+    document.getElementById('favorites')
+  ) {
+    console.log("window.storage and DOM elements are ready");
+    callback();
+  } else {
+    setTimeout(() => waitForStorageAndDOM(callback), 50);
+  }
+}
+
+function updateRecentlyViewedSidebar() {
+  console.log("updateRecentlyViewedSidebar called");
+  const recent = window.storage.get('recentlyViewed');
+  console.log("recentlyViewed:", recent);
+  const recentlyViewedList = document.getElementById('recentlyViewed');
+  if (recentlyViewedList) {
+    recentlyViewedList.innerHTML = '';
+    if (recent.length === 0) {
+      recentlyViewedList.innerHTML = '<li class="pl-2 text-gray-700">No recently viewed airfoils.</li>';
+    } else {
+      recent.forEach(airfoil => {
+        recentlyViewedList.innerHTML += `
+          <li class="pl-2 text-gray-700">
+            <a href="/airfoil/${airfoil.id}" class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded">
+              ${airfoil.name}
+            </a>
+          </li>
+        `;
+      });
+    }
+  }
+}
+
+function updateFavoritesSidebar() {
+  console.log("updateFavoritesSidebar called");
+  const favorites = window.storage.get('favorites');
+  console.log("favorites:", favorites);
+  const favoritesList = document.getElementById('favorites');
+  if (favoritesList) {
+    favoritesList.innerHTML = '';
+    if (favorites.length === 0) {
+      favoritesList.innerHTML = '<li class="pl-2 text-gray-700">No favorites yet.</li>';
+    } else {
+      favorites.forEach(airfoil => {
+        favoritesList.innerHTML += `<li class='pl-2 text-gray-700'>${airfoil.name}</li>`;
+      });
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  waitForStorageAndDOM(() => {
+    updateRecentlyViewedSidebar();
+    updateFavoritesSidebar();
+  });
+});
+</script> 

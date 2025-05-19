@@ -1,4 +1,11 @@
 ---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Sidebar from '../components/layout/Sidebar.astro';
+import SearchBar from '../components/search/SearchBar.astro';
+import AirfoilGrid from '../components/airfoil/AirfoilGrid.astro';
+import ComparisonBanner from '../components/comparison/ComparisonBanner.astro';
+import ComparisonModal from '../components/comparison/ComparisonModal.astro';
 import airfoils from '../data/airfoils.json';
 
 // In a real implementation, you would process the airfoil data to extract these values
@@ -36,1181 +43,176 @@ const popularAirfoils = Object.entries(airfoils)
   .map(([id, airfoil]) => ({ id, name: airfoil.name }));
 ---
 
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AeroFoilPro – Advanced Airfoil Database</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" />
-</head>
-<body class="bg-gray-50">
-  <!-- Header -->
-  <header class="bg-white border-b border-gray-200 px-6 py-4">
-    <div class="container mx-auto">
-      <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-gray-900">Advanced Airfoil Database</h1>
-        <div class="flex items-center space-x-4">
-          <button class="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Export
-          </button>
-          <button class="bg-gray-100 text-gray-700 px-4 py-2 rounded-md flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
-            Share
-          </button>
-        </div>
+<Layout title="AeroFoilPro - Airfoil Database">
+  <div class="flex w-full bg-gray-50 min-h-screen">
+    <!-- Left Banner Ad -->
+    <aside class="hidden xl:flex w-48 items-center justify-center px-4">
+      <div class="w-48 h-96 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-lg font-semibold">
+        Ad
       </div>
-      <p class="text-gray-600 mt-1">
-        Search, filter, and compare airfoils by camber, thickness, and application criteria
-      </p>
-    </div>
-  </header>
+    </aside>
 
-  <!-- Main Content -->
-  <main class="flex-1 container mx-auto px-6 py-6">
-    <div class="flex flex-col md:flex-row gap-6">
-      <!-- Sidebar -->
-      <aside class="md:w-64 flex-shrink-0">
-        <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-medium text-gray-900">Collections</h2>
-          </div>
-
-          <!-- Recently Viewed (will be populated by JS) -->
-          <div>
-            <h3 class="font-medium text-blue-600">Recently Viewed</h3>
-            <ul id="recentlyViewed" class="space-y-2 mt-2">
-              <li class="pl-2 text-gray-700">Loading...</li>
-            </ul>
-          </div>
-          
-          <div class="border-t border-gray-200 my-3 pt-3">
-            <h3 class="font-medium text-blue-600">Favorites</h3>
-            <ul id="favorites" class="space-y-2 mt-2">
-              <li class="pl-2 text-gray-700">Loading...</li>
-            </ul>
-          </div>
-          
-          <div class="border-t border-gray-200 my-3 pt-3">
-            <h3 class="font-medium text-blue-600">Popular Airfoils</h3>
-            <ul class="space-y-2 mt-2">
-              {popularAirfoils.map(airfoil => (
-                <li class="pl-2 text-gray-700">
-                  <a href={`/airfoil/${airfoil.id}`} class="hover:text-blue-600">
-                    {airfoil.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div class="border-t border-gray-200 my-3 pt-3">
-            <h3 class="font-medium text-blue-600">Applications</h3>
-            <ul class="space-y-2 mt-2">
-              {applications.map(app => (
-                <li class="pl-2">
-                  <label class="flex items-center text-gray-700">
-                    <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded mr-2" value={app} />
-                    {app}
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div class="border-t border-gray-200 my-3 pt-3">
-            <h3 class="font-medium text-blue-600">Insights</h3>
-            <div class="mt-2 p-3 bg-blue-50 rounded-md">
-              <p class="text-sm text-gray-700">
-                Similar to Clark Y? Try the Selig S1223 for higher lift capacity.
+    <!-- Main Content Area -->
+    <div class="flex flex-1 mt-8">
+      <div class="flex w-full">
+        <Sidebar popularAirfoils={popularAirfoils} applications={applications} />
+        <main class="flex-1 pl-4">
+          <div class="max-w-7xl mx-auto">
+            <div class="mb-6">
+              <h1 class="text-3xl font-bold text-gray-900">
+                Airfoil Database
+              </h1>
+              <p class="mt-2 text-gray-600">
+                Search and compare airfoils for your next project
               </p>
             </div>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Main Content Area -->
-      <div class="flex-1">
-        <!-- Search and Filter Bar -->
-        <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
-          <div class="flex flex-col md:flex-row md:items-center gap-3">
-            <div class="relative flex-1">
-              <svg class="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                id="searchBox"
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Search airfoils by name, type, application..."
-              />
-            </div>
-            <div class="flex gap-2">
-              <div class="relative">
-                <button id="camberDropdownBtn" class="px-4 py-2 bg-white border border-gray-300 rounded-md flex items-center">
-                  <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                  </svg>
-                  <span>Camber</span>
-                  <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                <div id="camberDropdown" class="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg hidden">
-                  <div class="p-2">
-                    {camberRanges.map(range => (
-                      <label class="flex items-center p-2 hover:bg-gray-100 rounded">
-                        <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded mr-2" value={range} />
-                        <span>{range}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div class="relative">
-                <button id="thicknessDropdownBtn" class="px-4 py-2 bg-white border border-gray-300 rounded-md flex items-center">
-                  <span>Thickness</span>
-                  <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                <div id="thicknessDropdown" class="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg hidden">
-                  <div class="p-2">
-                    {thicknessRanges.map(range => (
-                      <label class="flex items-center p-2 hover:bg-gray-100 rounded">
-                        <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded mr-2" value={range} />
-                        <span>{range}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div class="relative">
-                <button id="applicationDropdownBtn" class="px-4 py-2 bg-white border border-gray-300 rounded-md flex items-center">
-                  <span>Application</span>
-                  <svg class="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                <div id="applicationDropdown" class="absolute right-0 z-10 mt-1 w-48 bg-white rounded-md shadow-lg hidden">
-                  <div class="p-2">
-                    {applications.map(app => (
-                      <label class="flex items-center p-2 hover:bg-gray-100 rounded">
-                        <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded mr-2" value={app} />
-                        <span>{app}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            <SearchBar camberRanges={camberRanges} thicknessRanges={thicknessRanges} applications={applications} />
+            <div class="mt-6">
+              <AirfoilGrid airfoils={airfoils} />
             </div>
           </div>
-          
-          <!-- Active Filters -->
-          <div id="activeFilters" class="flex items-center mt-3 hidden">
-            <div class="text-sm text-gray-600 mr-2">Active filters:</div>
-            <div id="filterTags" class="flex flex-wrap gap-2">
-              <!-- Filter tags will be added here by JS -->
-            </div>
-            <button id="resetFilters" class="ml-auto text-sm text-blue-600 hover:text-blue-800 flex items-center">
-              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Reset filters
-            </button>
-          </div>
-        </div>
-        
-        <!-- Results Controls -->
-        <div class="flex justify-between items-center mb-4">
-          <div id="resultsCount" class="text-gray-600">
-            Showing {Object.keys(airfoils).length} airfoils
-          </div>
-          <div class="flex items-center space-x-3">
-            <span class="text-gray-600">View:</span>
-            <button id="gridViewBtn" class="p-1 bg-blue-100 text-blue-800 rounded">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-            </button>
-            <button id="listViewBtn" class="p-1 text-gray-400 hover:text-gray-600 rounded">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
-            </button>
-            <select id="sortSelect" class="border border-gray-300 rounded-md px-2 py-1 text-gray-600 text-sm">
-              <option value="popular">Sort by: Popular</option>
-              <option value="camberAsc">Camber (low to high)</option>
-              <option value="camberDesc">Camber (high to low)</option>
-              <option value="thicknessAsc">Thickness (low to high)</option>
-              <option value="thicknessDesc">Thickness (high to low)</option>
-              <option value="nameAsc">Name (A to Z)</option>
-              <option value="nameDesc">Name (Z to A)</option>
-            </select>
-          </div>
-        </div>
-        
-        <!-- Comparison Banner (initially hidden) -->
-        <div id="comparisonBanner" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex justify-between items-center hidden">
-          <div class="flex items-center">
-            <span class="font-medium text-blue-800 mr-2">Comparing <span id="compareCount">0</span> airfoils</span>
-            <div id="compareItems" class="flex flex-wrap space-x-2">
-              <!-- Comparison items will be added here by JS -->
-            </div>
-            <button id="addToCompare" class="ml-2 px-2 py-1 bg-white border border-dashed border-blue-300 text-blue-600 text-sm rounded-md flex items-center">
-              <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add one more
-            </button>
-          </div>
-          <div class="flex space-x-2">
-            <button id="clearCompare" class="px-3 py-1 bg-white border border-blue-300 text-blue-800 text-sm rounded-md">
-              Clear
-            </button>
-            <button id="viewCompare" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-md">
-              View comparison
-            </button>
-          </div>
-        </div>
-        
-        <!-- Airfoil Grid -->
-        <div id="airfoilGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Object.entries(airfoils).map(([id, airfoil]) => (
-            <div class="airfoil-card bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200" data-id={id} data-name={airfoil.name} data-description={airfoil.description || ''}>
-              <div class="p-4">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <h3 class="text-lg font-medium text-gray-900">{airfoil.name}</h3>
-                    <p class="text-sm text-gray-600">{airfoil.description || 'No description available'}</p>
-                  </div>
-                  <button class="favorite-btn text-gray-400 hover:text-red-500" data-id={id}>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </button>
-                </div>
-                
-                <div class="mt-3 border-b border-gray-200 pb-3">
-                  <canvas class="airfoil-canvas w-full h-16" data-coords={JSON.stringify(airfoil.coordinates)}></canvas>
-                </div>
-                
-                <div class="mt-3 grid grid-cols-2 gap-2">
-                  <div>
-                    <h4 class="text-xs font-medium text-gray-500 uppercase">Quick Stats</h4>
-                    <div class="grid grid-cols-2 gap-1 mt-1">
-                      <div class="text-sm text-gray-700">Camber</div>
-                      <div class="text-sm text-gray-900 font-medium">{airfoil.camber || '--'}</div>
-                      <div class="text-sm text-gray-700">Thickness</div>
-                      <div class="text-sm text-gray-900 font-medium">{airfoil.thickness || '--'}</div>
-                      <div class="text-sm text-gray-700">Re Range</div>
-                      <div class="text-sm text-gray-900 font-medium">{airfoil.reynoldsRange || '--'}</div>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-medium text-gray-500 uppercase">Performance</h4>
-                    <div class="grid grid-cols-2 gap-1 mt-1">
-                      <div class="text-sm text-gray-700">Max Cl/Cd</div>
-                      <div class="text-sm text-gray-900 font-medium">{airfoil.maxLiftDragRatio || '--'}</div>
-                      <div class="text-sm text-gray-700">Stall Angle</div>
-                      <div class="text-sm text-gray-900 font-medium">{airfoil.stallAngle || '--'}</div>
-                      <div class="text-sm text-gray-700">Cm</div>
-                      <div class="text-sm text-gray-900 font-medium">{airfoil.momentCoefficient || '--'}</div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="mt-3 flex space-x-2">
-                  <button class="compare-btn flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded text-sm font-medium flex justify-center items-center" data-id={id} data-name={airfoil.name}>
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    Compare
-                  </button>
-                  <a href={`/airfoil/${id}`} class="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm font-medium flex justify-center items-center">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Details
-                  </a>
-                </div>
-              </div>
-              <div class="bg-blue-50 px-4 py-2 text-xs text-blue-800">
-                {airfoil.applications ? airfoil.applications.join(', ') : 'General purpose'}
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        <!-- Pagination container added here -->
-        <div class="mt-6 flex justify-center">
-          <nav class="flex items-center space-x-1">
-            <!-- Pagination will be populated here by JavaScript -->
-          </nav>
-        </div>
-        
-        <script>
-          // Function to generate pagination based on total items and items per page
-          function updatePagination() {
-            const totalItems = 3; // Your total airfoil count
-            const itemsPerPage = 3; // How many airfoils to show per page
-            const totalPages = Math.ceil(totalItems / itemsPerPage);
-            const currentPage = 1; // Current page (you'll need to track this in your state)
-            
-            const paginationContainer = document.querySelector('nav');
-            if (!paginationContainer) return;
-            
-            // Clear existing pagination
-            paginationContainer.innerHTML = '';
-            
-            // Previous button
-            const prevButton = document.createElement('button');
-            prevButton.className = `px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
-            prevButton.disabled = currentPage === 1;
-            prevButton.textContent = 'Previous';
-            prevButton.addEventListener('click', () => {
-              if (currentPage > 1) {
-                // Handle page change logic here
-                console.log(`Navigate to page ${currentPage - 1}`);
-              }
-            });
-            paginationContainer.appendChild(prevButton);
-            
-            // Page numbers
-            for (let i = 1; i <= totalPages; i++) {
-              const pageButton = document.createElement('button');
-              pageButton.className = `px-3 py-1 rounded ${i === currentPage ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
-              pageButton.textContent = i.toString();
-              pageButton.addEventListener('click', () => {
-                if (i !== currentPage) {
-                  // Handle page change logic here
-                  console.log(`Navigate to page ${i}`);
-                }
-              });
-              paginationContainer.appendChild(pageButton);
-            }
-            
-            // Next button
-            const nextButton = document.createElement('button');
-            nextButton.className = `px-3 py-1 rounded ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
-            nextButton.disabled = currentPage === totalPages;
-            nextButton.textContent = 'Next';
-            nextButton.addEventListener('click', () => {
-              if (currentPage < totalPages) {
-                // Handle page change logic here
-                console.log(`Navigate to page ${currentPage + 1}`);
-              }
-            });
-            paginationContainer.appendChild(nextButton);
-            
-            // Update the results counter text
-            const resultsCountEl = document.getElementById('resultsCount');
-            if (resultsCountEl) {
-              resultsCountEl.textContent = `Showing ${totalItems} airfoils`;
-            }
-          }
-          
-          // Call this function when the page loads
-          document.addEventListener('DOMContentLoaded', updatePagination);
-        </script>
+        </main>
       </div>
     </div>
-  </main>
 
-  <!-- Comparison Modal (hidden by default) -->
-  <div id="comparisonModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg max-w-6xl w-full max-h-screen overflow-auto">
-      <div class="p-6">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-bold text-gray-900">Airfoil Comparison</h2>
-          <button id="closeComparisonModal" class="text-gray-500 hover:text-gray-700">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <div id="comparisonGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Comparison items will be populated here by JS -->
-        </div>
-        
-        <!-- Performance Comparison Chart -->
-        <div class="mt-6 p-4 bg-white border border-gray-200 rounded-lg">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Performance Comparison</h3>
-		  <div class="h-64 bg-gray-50 rounded border border-gray-200 flex items-center justify-center">
-            <span class="text-gray-500">Performance charts would be displayed here</span>
-          </div>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="mt-6 flex justify-end space-x-3">
-          <button id="exportComparison" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md">
-            Export Comparison
-          </button>
-          <button id="downloadData" class="px-4 py-2 bg-blue-600 text-white rounded-md">
-            Download Data
-          </button>
-        </div>
+    <!-- Right Banner Ad -->
+    <aside class="hidden xl:flex w-48 items-center justify-center px-4">
+      <div class="w-48 h-96 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-lg font-semibold">
+        Ad
       </div>
-    </div>
+    </aside>
   </div>
 
-  <script>
-    // Helper function to store and retrieve from localStorage
-    const storage = {
-      get: (key) => {
-        try {
-          return JSON.parse(localStorage.getItem(key)) || [];
-        } catch (e) {
-          return [];
-        }
-      },
-      set: (key, value) => {
-        localStorage.setItem(key, JSON.stringify(value));
-      }
-    };
+  <ComparisonBanner />
+  <ComparisonModal />
 
-    // DOM elements
-    const searchBox = document.getElementById('searchBox');
-    const airfoilGrid = document.getElementById('airfoilGrid');
-    const airfoilCards = Array.from(document.querySelectorAll('.airfoil-card'));
-    const recentlyViewedEl = document.getElementById('recentlyViewed');
-    const favoritesEl = document.getElementById('favorites');
-    const resultsCountEl = document.getElementById('resultsCount');
-    const sortSelectEl = document.getElementById('sortSelect');
-    const gridViewBtn = document.getElementById('gridViewBtn');
-    const listViewBtn = document.getElementById('listViewBtn');
-    const comparisonBanner = document.getElementById('comparisonBanner');
-    const compareItemsEl = document.getElementById('compareItems');
-    const compareCountEl = document.getElementById('compareCount');
-    const clearCompareBtn = document.getElementById('clearCompare');
-    const viewCompareBtn = document.getElementById('viewCompare');
-    const comparisonModal = document.getElementById('comparisonModal');
-    const comparisonGrid = document.getElementById('comparisonGrid');
-    const closeComparisonModalBtn = document.getElementById('closeComparisonModal');
-    const camberDropdownBtn = document.getElementById('camberDropdownBtn');
-    const camberDropdown = document.getElementById('camberDropdown');
-    const thicknessDropdownBtn = document.getElementById('thicknessDropdownBtn');
-    const thicknessDropdown = document.getElementById('thicknessDropdown');
-    const applicationDropdownBtn = document.getElementById('applicationDropdownBtn');
-    const applicationDropdown = document.getElementById('applicationDropdown');
-    const activeFiltersEl = document.getElementById('activeFilters');
-    const filterTagsEl = document.getElementById('filterTags');
-    const resetFiltersBtn = document.getElementById('resetFilters');
+  <!-- Error container -->
+  <div id="errorContainer" class="fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded hidden" role="alert">
+  </div>
+</Layout>
 
-    // State management
-    const state = {
-      recentlyViewed: storage.get('recentlyViewed') || [],
-      favorites: storage.get('favorites') || [],
-      comparing: storage.get('comparing') || [],
-      filters: {
-        search: '',
-        camber: [],
-        thickness: [],
-        application: []
-      },
-      view: 'grid', // or 'list'
-      sortOrder: 'popular'
-    };
+<script>
+  import { App } from '../scripts/app.js';
+</script>
 
-    // Check if returning from detail page and update recently viewed
-    const urlParams = new URLSearchParams(window.location.search);
-    const returnedFromDetailId = urlParams.get('from');
+<script>
+function waitForStorageAndDOM(callback) {
+  if (
+    window.storage &&
+    document.getElementById('recentlyViewed') &&
+    document.getElementById('favorites')
+  ) {
+    console.log("window.storage and DOM elements are ready");
+    callback();
+  } else {
+    setTimeout(() => waitForStorageAndDOM(callback), 50);
+  }
+}
 
-    if (returnedFromDetailId) {
-      // Find the airfoil data for the id
-      const airfoilCard = document.querySelector(`.airfoil-card[data-id="${returnedFromDetailId}"]`);
-      if (airfoilCard) {
-        const name = airfoilCard.dataset.name;
-        
-        // Remove if already exists (to move to front of list)
-        state.recentlyViewed = state.recentlyViewed.filter(item => item.id !== returnedFromDetailId);
-        
-        // Add to front of recently viewed
-        state.recentlyViewed.unshift({ id: returnedFromDetailId, name });
-        
-        // Limit to 5 items
-        if (state.recentlyViewed.length > 5) {
-          state.recentlyViewed = state.recentlyViewed.slice(0, 5);
-        }
-        
-        // Save to localStorage
-        storage.set('recentlyViewed', state.recentlyViewed);
-      }
-    }
-
-    // Initialize app
-    function initApp() {
-      renderRecentlyViewed();
-      renderFavorites();
-      renderAirfoilCanvases();
-      updateComparisonBanner();
-      attachEventListeners();
-    }
-
-    // Render recently viewed airfoils
-    function renderRecentlyViewed() {
-      if (state.recentlyViewed.length === 0) {
-        recentlyViewedEl.innerHTML = '<li class="pl-2 text-gray-700">No recently viewed airfoils</li>';
-        return;
-      }
-
-      recentlyViewedEl.innerHTML = state.recentlyViewed
-        .slice(0, 5)
-        .map(airfoil => `
+function updateRecentlyViewedSidebar() {
+  console.log("updateRecentlyViewedSidebar called");
+  const recent = window.storage.get('recentlyViewed');
+  console.log("recentlyViewed:", recent);
+  const recentlyViewedList = document.getElementById('recentlyViewed');
+  if (recentlyViewedList) {
+    recentlyViewedList.innerHTML = '';
+    if (recent.length === 0) {
+      recentlyViewedList.innerHTML = '<li class="pl-2 text-gray-700">No recently viewed airfoils.</li>';
+    } else {
+      recent.forEach(airfoil => {
+        recentlyViewedList.innerHTML += `
           <li class="pl-2 text-gray-700">
-            <a href="/airfoil/${airfoil.id}" class="hover:text-blue-600">
+            <a href="/airfoil/${airfoil.id}" class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded">
               ${airfoil.name}
             </a>
           </li>
-        `)
-        .join('');
-    }
-
-    // Render favorites
-    function renderFavorites() {
-      if (state.favorites.length === 0) {
-        favoritesEl.innerHTML = '<li class="pl-2 text-gray-700">No favorite airfoils</li>';
-        return;
-      }
-
-      favoritesEl.innerHTML = state.favorites
-        .map(airfoil => `
-          <li class="pl-2 text-gray-700">
-            <a href="/airfoil/${airfoil.id}" class="hover:text-blue-600">
-              ${airfoil.name}
-            </a>
-          </li>
-        `)
-        .join('');
-
-      // Update favorite buttons
-      document.querySelectorAll('.favorite-btn').forEach(btn => {
-        const id = btn.dataset.id;
-        if (state.favorites.some(fav => fav.id === id)) {
-          btn.classList.add('text-red-500');
-          btn.classList.remove('text-gray-400');
-          btn.innerHTML = `
-            <svg class="w-5 h-5" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          `;
-        } else {
-          btn.classList.remove('text-red-500');
-          btn.classList.add('text-gray-400');
-          btn.innerHTML = `
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          `;
-        }
-      });
-    }
-
-    // Render airfoil canvases with crisp outlines while preserving orientation
-	function renderAirfoilCanvases() {
-	  document.querySelectorAll('.airfoil-canvas').forEach(canvas => {
-		const coords = JSON.parse(canvas.dataset.coords);
-		const ctx = canvas.getContext('2d');
-		
-		// Get actual dimensions
-		const width = canvas.offsetWidth || canvas.width;
-		const height = canvas.offsetHeight || canvas.height;
-		
-		// Set high resolution
-		canvas.width = width * 2;
-		canvas.height = height * 2;
-		ctx.scale(2, 2);
-		
-		// Find min/max to normalize
-		let minX = 1, maxX = 0, minY = 1, maxY = -1;
-		coords.forEach(([x, y]) => {
-		  minX = Math.min(minX, x);
-		  maxX = Math.max(maxX, x);
-		  minY = Math.min(minY, y);
-		  maxY = Math.max(maxY, y);
-		});
-
-		// Use same padding as original
-		const padding = 10;
-		
-		// Use the original scaling method to maintain consistency
-		const scaleX = (width - padding * 2) / (maxX - minX);
-		const scaleY = (height - padding * 2) / (maxY - minY);
-		
-		// Clear canvas
-		ctx.clearRect(0, 0, width * 2, height * 2);
-		
-		// Draw airfoil outline using original positioning to preserve orientation
-		ctx.beginPath();
-		coords.forEach(([x, y], i) => {
-		  const px = padding + (x - minX) * scaleX;
-		  const py = height - (padding + (y - minY) * scaleY); // Keep the original calculation
-		  if (i === 0) ctx.moveTo(px, py);
-		  else ctx.lineTo(px, py);
-		});
-		
-		// Improve line quality
-		ctx.strokeStyle = '#2c5282'; // Deeper blue color
-		ctx.lineWidth = 2; // Thicker line but not too thick
-		ctx.lineJoin = 'round';
-		ctx.lineCap = 'round';
-		
-		// Enable anti-aliasing for smoother lines
-		ctx.imageSmoothingEnabled = true;
-		ctx.imageSmoothingQuality = 'high';
-		
-		ctx.stroke();
-	  });
-	}
-
-    // Update comparison banner
-    function updateComparisonBanner() {
-      if (state.comparing.length === 0) {
-        comparisonBanner.classList.add('hidden');
-        return;
-      }
-
-      comparisonBanner.classList.remove('hidden');
-      compareCountEl.textContent = state.comparing.length;
-      
-      compareItemsEl.innerHTML = state.comparing
-        .map(airfoil => `
-          <span class="px-2 py-1 bg-white border border-blue-300 text-blue-800 text-sm rounded-md flex items-center">
-            ${airfoil.name}
-            <button class="ml-1 text-blue-800 remove-compare" data-id="${airfoil.id}">×</button>
-          </span>
-        `)
-        .join('');
-
-      // Update compare buttons
-      document.querySelectorAll('.compare-btn').forEach(btn => {
-        const id = btn.dataset.id;
-        if (state.comparing.some(item => item.id === id)) {
-          btn.classList.add('bg-blue-100', 'text-blue-800');
-          btn.classList.remove('bg-gray-100', 'text-gray-700');
-        } else {
-          btn.classList.remove('bg-blue-100', 'text-blue-800');
-          btn.classList.add('bg-gray-100', 'text-gray-700');
-        }
-      });
-
-      // Attach event listeners to remove buttons
-      document.querySelectorAll('.remove-compare').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const id = btn.dataset.id;
-          state.comparing = state.comparing.filter(item => item.id !== id);
-          storage.set('comparing', state.comparing);
-          updateComparisonBanner();
-        });
-      });
-    }
-
-    // Filter airfoils
-    function filterAirfoils() {
-      let visibleCount = 0;
-      
-      airfoilCards.forEach(card => {
-        const name = card.dataset.name.toLowerCase();
-        const description = (card.dataset.description || '').toLowerCase();
-        // Add more data attributes as needed for filtering
-        
-        let visible = true;
-        
-        // Search term filter
-        if (state.filters.search) {
-          visible = visible && (name.includes(state.filters.search) || description.includes(state.filters.search));
-        }
-        
-        // More filters (camber, thickness, applications) would go here
-        // Based on the data attributes you add to the cards
-        
-        if (visible) {
-          card.style.display = '';
-          visibleCount++;
-        } else {
-          card.style.display = 'none';
-        }
-      });
-      
-      resultsCountEl.textContent = `Showing ${visibleCount} of ${airfoilCards.length} airfoils`;
-      
-      // Show active filters section if any filters are applied
-      if (state.filters.search || 
-          state.filters.camber.length > 0 || 
-          state.filters.thickness.length > 0 || 
-          state.filters.application.length > 0) {
-        activeFiltersEl.classList.remove('hidden');
-        renderFilterTags();
-      } else {
-        activeFiltersEl.classList.add('hidden');
-      }
-    }
-    
-    // Render filter tags
-    function renderFilterTags() {
-      let tags = [];
-      
-      if (state.filters.search) {
-        tags.push(`
-          <span class="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md flex items-center">
-            Search: "${state.filters.search}"
-            <button class="ml-1 text-blue-800 remove-filter" data-type="search">×</button>
-          </span>
-        `);
-      }
-      
-      state.filters.camber.forEach(value => {
-        tags.push(`
-          <span class="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md flex items-center">
-            Camber: ${value}
-            <button class="ml-1 text-blue-800 remove-filter" data-type="camber" data-value="${value}">×</button>
-          </span>
-        `);
-      });
-      
-      state.filters.thickness.forEach(value => {
-        tags.push(`
-          <span class="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md flex items-center">
-            Thickness: ${value}
-            <button class="ml-1 text-blue-800 remove-filter" data-type="thickness" data-value="${value}">×</button>
-          </span>
-        `);
-      });
-      
-      state.filters.application.forEach(value => {
-        tags.push(`
-          <span class="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md flex items-center">
-            Application: ${value}
-            <button class="ml-1 text-blue-800 remove-filter" data-type="application" data-value="${value}">×</button>
-          </span>
-        `);
-      });
-      
-      filterTagsEl.innerHTML = tags.join('');
-      
-      // Attach event listeners to remove filter buttons
-      document.querySelectorAll('.remove-filter').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const type = btn.dataset.type;
-          const value = btn.dataset.value;
-          
-          if (type === 'search') {
-            state.filters.search = '';
-            searchBox.value = '';
-          } else if (type === 'camber') {
-            state.filters.camber = state.filters.camber.filter(v => v !== value);
-            // Update checkbox state
-            document.querySelector(`input[type="checkbox"][value="${value}"]`).checked = false;
-          } else if (type === 'thickness') {
-            state.filters.thickness = state.filters.thickness.filter(v => v !== value);
-            // Update checkbox state
-            document.querySelector(`input[type="checkbox"][value="${value}"]`).checked = false;
-          } else if (type === 'application') {
-            state.filters.application = state.filters.application.filter(v => v !== value);
-            // Update checkbox state
-            document.querySelector(`input[type="checkbox"][value="${value}"]`).checked = false;
-          }
-          
-          filterAirfoils();
-        });
-      });
-    }
-
-    // Reset all filters
-    function resetFilters() {
-      state.filters = {
-        search: '',
-        camber: [],
-        thickness: [],
-        application: []
-      };
-      
-      searchBox.value = '';
-      
-      // Uncheck all checkboxes
-      document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-        checkbox.checked = false;
-      });
-      
-      filterAirfoils();
-    }
-
-    // Toggle view mode
-    function setViewMode(mode) {
-      state.view = mode;
-      
-      if (mode === 'grid') {
-        airfoilGrid.classList.remove('grid-cols-1');
-        airfoilGrid.classList.add('grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3');
-        gridViewBtn.classList.add('bg-blue-100', 'text-blue-800');
-        gridViewBtn.classList.remove('text-gray-400');
-        listViewBtn.classList.remove('bg-blue-100', 'text-blue-800');
-        listViewBtn.classList.add('text-gray-400');
-      } else {
-        airfoilGrid.classList.remove('grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3');
-        airfoilGrid.classList.add('grid-cols-1');
-        listViewBtn.classList.add('bg-blue-100', 'text-blue-800');
-        listViewBtn.classList.remove('text-gray-400');
-        gridViewBtn.classList.remove('bg-blue-100', 'text-blue-800');
-        gridViewBtn.classList.add('text-gray-400');
-      }
-    }
-
-    // Sort airfoils
-    function sortAirfoils(order) {
-      state.sortOrder = order;
-      
-      // In a real implementation, you would sort based on actual data
-      // This is just a placeholder - sorting would need to be implemented
-      // based on your actual data structure for each airfoil
-      
-      const sortedCards = [...airfoilCards].sort((a, b) => {
-        const nameA = a.dataset.name;
-        const nameB = b.dataset.name;
-        
-        if (order === 'nameAsc') {
-          return nameA.localeCompare(nameB);
-        } else if (order === 'nameDesc') {
-          return nameB.localeCompare(nameA);
-        }
-        
-        // Other sorting options would be implemented here
-        return 0;
-      });
-      
-      // Re-append in the new order
-      sortedCards.forEach(card => {
-        airfoilGrid.appendChild(card);
-      });
-    }
-
-    // Toggle favorite status
-	function toggleFavorite(id, name) {
-	  const index = state.favorites.findIndex(fav => fav.id === id);
-	  
-	  if (index === -1) {
-		// Add to favorites
-		state.favorites.push({ id, name });
-	  } else {
-		// Remove from favorites
-		state.favorites.splice(index, 1);
-	  }
-	  
-	  storage.set('favorites', state.favorites);
-	  renderFavorites();
-	  
-	  // Update this specific button immediately
-	  const btn = document.querySelector(`.favorite-btn[data-id="${id}"]`);
-	  if (btn) {
-		// If it was removed (no longer in favorites), ensure it's reset
-		if (!state.favorites.some(fav => fav.id === id)) {
-		  btn.classList.remove('text-red-500');
-		  btn.classList.add('text-gray-400');
-		  btn.innerHTML = `
-			<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-			  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-			</svg>
-		  `;
-		}
-	  }
-	}
-
-    // Toggle comparison status
-    function toggleCompare(id, name) {
-      const index = state.comparing.findIndex(item => item.id === id);
-      
-      if (index === -1) {
-        // Add to comparison if less than 3 items
-        if (state.comparing.length < 3) {
-          state.comparing.push({ id, name });
-        } else {
-          alert('You can compare up to 3 airfoils at a time.');
-          return;
-        }
-      } else {
-        // Remove from comparison
-        state.comparing.splice(index, 1);
-      }
-      
-      storage.set('comparing', state.comparing);
-      updateComparisonBanner();
-    }
-
-    // Show comparison modal
-    function showComparisonModal() {
-      if (state.comparing.length === 0) {
-        alert('Please select at least one airfoil to compare.');
-        return;
-      }
-      
-      comparisonGrid.innerHTML = '';
-      
-      // Add compared items
-      state.comparing.forEach(item => {
-        // In a real implementation, you would fetch the full airfoil data
-        // This is just a placeholder with dummy data
-        
-        const cardHtml = `
-          <div class="p-4 bg-gray-50 rounded-lg">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">${item.name}</h3>
-            <div class="mb-4">
-              <canvas class="comparison-canvas w-full h-20" data-id="${item.id}"></canvas>
-            </div>
-            
-            <div class="space-y-2">
-              <div class="flex justify-between">
-                <span class="text-gray-600">Camber:</span>
-                <span class="font-medium">4.0%</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Thickness:</span>
-                <span class="font-medium">11.7%</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Re Range:</span>
-                <span class="font-medium">50k-1M</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Max Cl/Cd:</span>
-                <span class="font-medium">83.4</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Stall Angle:</span>
-                <span class="font-medium">15°</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Moment Coef (Cm):</span>
-                <span class="font-medium">-0.045</span>
-              </div>
-            </div>
-          </div>
         `;
-        
-        comparisonGrid.innerHTML += cardHtml;
       });
-      
-      // Add empty slot if less than 3 items
-      if (state.comparing.length < 3) {
-        comparisonGrid.innerHTML += `
-          <div class="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-blue-300 flex items-center justify-center">
-            <button class="text-blue-600 flex flex-col items-center">
-              <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <span class="mt-2">Add another airfoil</span>
-            </button>
-          </div>
-        `;
-      }
-      
-      // Show the modal
-      comparisonModal.classList.remove('hidden');
-      
-      // Re-render canvases for comparison
-      renderComparisonCanvases();
     }
+  }
+}
 
-    // Render canvases in comparison modal
-    function renderComparisonCanvases() {
-      // This would work similar to the main canvas rendering function
-      // But adapted for the comparison canvases
-      document.querySelectorAll('.comparison-canvas').forEach(canvas => {
-        const id = canvas.dataset.id;
-        
-        // Find the coordinates for this airfoil
-        const originalCanvas = document.querySelector(`.airfoil-card[data-id="${id}"] canvas`);
-        if (!originalCanvas) return;
-        
-        const coords = JSON.parse(originalCanvas.dataset.coords);
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        
-        // Find min/max to normalize
-        let minX = 1, maxX = 0, minY = 1, maxY = -1;
-        coords.forEach(([x, y]) => {
-          minX = Math.min(minX, x);
-          maxX = Math.max(maxX, x);
-          minY = Math.min(minY, y);
-          maxY = Math.max(maxY, y);
-        });
-        
-        const padding = 10;
-        const scaleX = (width - padding * 2) / (maxX - minX);
-        const scaleY = (height - padding * 2) / (maxY - minY);
-        
-        ctx.clearRect(0, 0, width, height);
-        ctx.beginPath();
-        coords.forEach(([x, y], i) => {
-          const px = padding + (x - minX) * scaleX;
-          const py = height - (padding + (y - minY) * scaleY);
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        });
-        ctx.strokeStyle = '#2c3e50';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+function updateFavoritesSidebar() {
+  console.log("updateFavoritesSidebar called");
+  const favorites = window.storage.get('favorites');
+  console.log("favorites:", favorites);
+  const favoritesList = document.getElementById('favorites');
+  if (favoritesList) {
+    favoritesList.innerHTML = '';
+    if (favorites.length === 0) {
+      favoritesList.innerHTML = '<li class="pl-2 text-gray-700">No favorites yet.</li>';
+    } else {
+      favorites.forEach(airfoil => {
+        favoritesList.innerHTML += `<li class='pl-2 text-gray-700'>${airfoil.name}</li>`;
       });
     }
+  }
+}
 
-    // Handle dropdown toggle
-    function toggleDropdown(dropdown) {
-      dropdown.classList.toggle('hidden');
-    }
+document.addEventListener('DOMContentLoaded', () => {
+  waitForStorageAndDOM(() => {
+    updateRecentlyViewedSidebar();
+    updateFavoritesSidebar();
+  });
+});
+</script>
 
-    // Close dropdown when clicking outside
-    function closeDropdowns(e) {
-      if (!e.target.closest('#camberDropdownBtn') && !e.target.closest('#camberDropdown')) {
-        camberDropdown.classList.add('hidden');
-      }
-      
-      if (!e.target.closest('#thicknessDropdownBtn') && !e.target.closest('#thicknessDropdown')) {
-        thicknessDropdown.classList.add('hidden');
-      }
-      
-      if (!e.target.closest('#applicationDropdownBtn') && !e.target.closest('#applicationDropdown')) {
-        applicationDropdown.classList.add('hidden');
-      }
-    }
+<script>
+function waitForStorageAndFavoriteButtons(callback) {
+  if (
+    window.storage &&
+    document.querySelectorAll('.favorite-btn').length > 0
+  ) {
+    callback();
+  } else {
+    setTimeout(() => waitForStorageAndFavoriteButtons(callback), 50);
+  }
+}
 
-    // Attach all event listeners
-    function attachEventListeners() {
-      // Search box
-      searchBox.addEventListener('input', () => {
-        state.filters.search = searchBox.value.toLowerCase();
-        filterAirfoils();
+function updateFavoriteIcon(btn, isFav) {
+  const svg = btn.querySelector('svg');
+  if (svg) {
+    svg.setAttribute('fill', isFav ? 'red' : 'none');
+    btn.classList.toggle('text-red-500', isFav);
+    btn.classList.toggle('text-gray-400', !isFav);
+  }
+}
+
+function updateFavoritesSidebar() {
+  const favorites = window.storage.get('favorites');
+  const favoritesList = document.getElementById('favorites');
+  if (favoritesList) {
+    favoritesList.innerHTML = '';
+    if (favorites.length === 0) {
+      favoritesList.innerHTML = '<li class="pl-2 text-gray-700">No favorites yet.</li>';
+    } else {
+      favorites.forEach(airfoil => {
+        favoritesList.innerHTML += `<li class='pl-2 text-gray-700'>${airfoil.name}</li>`;
       });
-      
-      // Favorite buttons
-      document.querySelectorAll('.favorite-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.dataset.id;
-          const name = btn.closest('.airfoil-card').dataset.name;
-          toggleFavorite(id, name);
-        });
-      });
-      
-      // Compare buttons
-      document.querySelectorAll('.compare-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.dataset.id;
-          const name = btn.dataset.name;
-          toggleCompare(id, name);
-        });
-      });
-      
-      // View comparison button
-      viewCompareBtn.addEventListener('click', showComparisonModal);
-      
-      // Clear comparison button
-      clearCompareBtn.addEventListener('click', () => {
-        state.comparing = [];
-        storage.set('comparing', state.comparing);
-        updateComparisonBanner();
-      });
-      
-      // Close comparison modal button
-      closeComparisonModalBtn.addEventListener('click', () => {
-        comparisonModal.classList.add('hidden');
-      });
-      
-      // Grid view button
-      gridViewBtn.addEventListener('click', () => setViewMode('grid'));
-      
-      // List view button
-      listViewBtn.addEventListener('click', () => setViewMode('list'));
-      
-      // Sort select
-      sortSelectEl.addEventListener('change', () => {
-        sortAirfoils(sortSelectEl.value);
-      });
-      
-      // Reset filters button
-      resetFiltersBtn.addEventListener('click', resetFilters);
-      
-      // Dropdown toggles
-      camberDropdownBtn.addEventListener('click', () => toggleDropdown(camberDropdown));
-      thicknessDropdownBtn.addEventListener('click', () => toggleDropdown(thicknessDropdown));
-      applicationDropdownBtn.addEventListener('click', () => toggleDropdown(applicationDropdown));
-      
-      // Close dropdowns when clicking outside
-      document.addEventListener('click', closeDropdowns);
-      
-      // Filter checkboxes
-      document.querySelectorAll('#camberDropdown input[type="checkbox"]').forEach(checkbox => {
-        checkbox.addEventListener('change', () => {
-          if (checkbox.checked) {
-            state.filters.camber.push(checkbox.value);
-          } else {
-            state.filters.camber = state.filters.camber.filter(v => v !== checkbox.value);
-          }
-          filterAirfoils();
-        });
-      });
-      
-      document.querySelectorAll('#thicknessDropdown input[type="checkbox"]').forEach(checkbox => {
-        checkbox.addEventListener('change', () => {
-          if (checkbox.checked) {
-            state.filters.thickness.push(checkbox.value);
-          } else {
-            state.filters.thickness = state.filters.thickness.filter(v => v !== checkbox.value);
-          }
-          filterAirfoils();
-        });
-      });
-      
-      document.querySelectorAll('#applicationDropdown input[type="checkbox"], aside input[type="checkbox"]').forEach(checkbox => {
-        checkbox.addEventListener('change', () => {
-          if (checkbox.checked) {
-            state.filters.application.push(checkbox.value);
-          } else {
-            state.filters.application = state.filters.application.filter(v => v !== checkbox.value);
-          }
-          filterAirfoils();
-        });
-      });
-      
-      // Update detail links to include return parameters and add click handlers
-		document.querySelectorAll('.airfoil-card a[href^="/airfoil/"]').forEach(link => {
-		  const airfoilCard = link.closest('.airfoil-card');
-		  const id = airfoilCard.dataset.id;
-		  const name = airfoilCard.dataset.name;
-		  
-		  // Keep the href parameter for regular navigation
-		  link.setAttribute('href', `${link.getAttribute('href')}?from=${id}`);
-		  
-		  // Also add a click event handler as a backup
-		  link.addEventListener('click', () => {
-			// Get current recently viewed list
-			let recentlyViewed = storage.get('recentlyViewed');
-			
-			// Remove if already exists (to move to front of list)
-			recentlyViewed = recentlyViewed.filter(item => item.id !== id);
-			
-			// Add to front of recently viewed
-			recentlyViewed.unshift({ id, name });
-			
-			// Limit to 5 items
-			if (recentlyViewed.length > 5) {
-			  recentlyViewed = recentlyViewed.slice(0, 5);
-			}
-			
-			// Save to localStorage
-			storage.set('recentlyViewed', recentlyViewed);
-		  });
-		});
     }
-    
-    // Initialize the app
-    initApp();
-  </script>
-</body>
-</html>
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  waitForStorageAndFavoriteButtons(() => {
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+      const id = btn.getAttribute('data-id');
+      const isFav = window.storage.isFavorite(id);
+      updateFavoriteIcon(btn, isFav);
+
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const card = btn.closest('.airfoil-card');
+        const name = card?.getAttribute('data-name') || '';
+        const description = card?.getAttribute('data-description') || '';
+        const airfoil = { id, name, description };
+        const newFav = window.storage.toggleFavorite(airfoil);
+        updateFavoriteIcon(btn, newFav);
+        updateFavoritesSidebar();
+      });
+    });
+    updateFavoritesSidebar();
+  });
+});
+</script>

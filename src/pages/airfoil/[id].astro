@@ -80,3 +80,53 @@ if (airfoil.name.startsWith('NACA')) {
     </div>
   </div>
 </AirfoilLayout>
+
+<!-- Inject airfoil data as a global variable, as a JSON string, and parse it in the browser -->
+<script is:inline>
+  window.currentAirfoilData = JSON.parse(`${JSON.stringify(airfoil)}`);
+  const airfoilData = window.currentAirfoilData;
+  console.log('[DEBUG] window.currentAirfoilData:', window.currentAirfoilData);
+</script>
+
+<script is:inline>
+function waitForStorage(callback) {
+  if (window.storage) {
+    callback();
+  } else {
+    setTimeout(() => waitForStorage(callback), 50);
+  }
+}
+
+console.log('[DEBUG] airfoilData used for Recently Viewed:', airfoilData);
+
+waitForStorage(() => {
+  window.storage.addToRecentlyViewed(airfoilData);
+  updateRecentlyViewedSidebar();
+});
+
+function updateRecentlyViewedSidebar() {
+  const recent = window.storage.get('recentlyViewed');
+  console.log('[DEBUG] recentlyViewed from storage:', recent);
+  const recentlyViewedList = document.getElementById('recentlyViewed');
+  if (recentlyViewedList) {
+    recentlyViewedList.innerHTML = '';
+    if (recent.length === 0) {
+      recentlyViewedList.innerHTML = '<li class="pl-2 text-gray-700">No recently viewed airfoils.</li>';
+    } else {
+      recent.forEach(airfoil => {
+        recentlyViewedList.innerHTML += `
+          <li class="pl-2 text-gray-700">
+            <a href="/airfoil/${airfoil.id}" class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded">
+              ${airfoil.name}
+            </a>
+          </li>
+        `;
+      });
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  waitForStorage(updateRecentlyViewedSidebar);
+});
+</script>

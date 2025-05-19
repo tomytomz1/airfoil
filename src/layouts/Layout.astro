@@ -1,0 +1,57 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" />
+  </head>
+  <body>
+    <script>
+      window.storage = {
+        get(key) {
+          return JSON.parse(localStorage.getItem(key) || '[]');
+        },
+        set(key, value) {
+          localStorage.setItem(key, JSON.stringify(value));
+        },
+        isFavorite(id) {
+          return this.get('favorites').some(fav => fav.id === id);
+        },
+        toggleFavorite(airfoil) {
+          let favorites = this.get('favorites');
+          const index = favorites.findIndex(fav => fav.id === airfoil.id);
+          let isFav;
+          if (index === -1) {
+            favorites.push(airfoil);
+            isFav = true;
+          } else {
+            favorites.splice(index, 1);
+            isFav = false;
+          }
+          this.set('favorites', favorites);
+          return isFav;
+        }
+      };
+    </script>
+    <header class="bg-white border-b border-gray-200">
+      <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/" class="text-xl font-bold text-blue-600">AeroFoilPro</a>
+        <!-- Removed navigation as requested -->
+        <div class="flex items-center space-x-2">
+          <button class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">Sign In</button>
+        </div>
+      </div>
+    </header>
+    <slot />
+    <script src="/scripts/favorite.js" type="module"></script>
+  </body>
+</html> 
