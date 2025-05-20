@@ -1,0 +1,47 @@
+---
+import type { Airfoil } from '../../types';
+import MetadataCard from './MetadataCard.astro';
+import WingletConfigCard from './WingletConfigCard.astro';
+import CoordinateDataCard from './CoordinateDataCard.astro';
+import Model3DCard from './Model3DCard.astro';
+import PerformanceCard from './PerformanceCard.astro';
+import DragPolarCard from './DragPolarCard.astro';
+import StructuralPropertiesCard from './StructuralPropertiesCard.astro';
+
+interface Props {
+  airfoil: Airfoil;
+}
+const { airfoil } = Astro.props;
+---
+
+<div id="geometry-content" class="airfoil-tab-content active">
+  <div class="mt-6 space-y-6">
+    <CoordinateDataCard coordinates={airfoil.coordinates} />
+    <MetadataCard name={airfoil.name} />
+  </div>
+</div>
+<div id="performance-content" class="airfoil-tab-content">
+  <div class="mt-6">
+    <PerformanceCard name={airfoil.name} />
+  </div>
+</div>
+<div id="polar-content" class="airfoil-tab-content">
+  <div class="mt-6">
+    <DragPolarCard name={airfoil.name} />
+  </div>
+</div>
+<div id="structural-content" class="airfoil-tab-content">
+  <div class="mt-6">
+    <StructuralPropertiesCard name={airfoil.name} />
+  </div>
+</div>
+<div id="winglets-content" class="airfoil-tab-content">
+  <div class="mt-6">
+    <WingletConfigCard airfoilName={airfoil.name} />
+  </div>
+</div>
+<div id="3d-content" class="airfoil-tab-content">
+  <div class="mt-6">
+    <Model3DCard name={airfoil.name} coordinates={airfoil.coordinates} />
+  </div>
+</div> 

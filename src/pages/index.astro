@@ -44,43 +44,24 @@ const popularAirfoils = Object.entries(airfoils)
 ---
 
 <Layout title="AeroFoilPro - Airfoil Database">
-  <div class="flex w-full bg-gray-50 min-h-screen">
-    <!-- Left Banner Ad -->
-    <aside class="hidden xl:flex w-48 items-center justify-center px-4">
-      <div class="w-48 h-96 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-lg font-semibold">
-        Ad
+  <div class="flex w-full">
+    <Sidebar popularAirfoils={popularAirfoils} applications={applications} />
+    <main class="flex-1 pl-4">
+      <div class="max-w-7xl mx-auto">
+        <div class="mb-6">
+          <h1 class="text-3xl font-bold text-gray-900">
+            Airfoil Database
+          </h1>
+          <p class="mt-2 text-gray-600">
+            Search and compare airfoils for your next project
+          </p>
+        </div>
+        <SearchBar camberRanges={camberRanges} thicknessRanges={thicknessRanges} applications={applications} />
+        <div class="mt-6">
+          <AirfoilGrid airfoils={airfoils} />
+        </div>
       </div>
-    </aside>
-
-    <!-- Main Content Area -->
-    <div class="flex flex-1 mt-8">
-      <div class="flex w-full">
-        <Sidebar popularAirfoils={popularAirfoils} applications={applications} />
-        <main class="flex-1 pl-4">
-          <div class="max-w-7xl mx-auto">
-            <div class="mb-6">
-              <h1 class="text-3xl font-bold text-gray-900">
-                Airfoil Database
-              </h1>
-              <p class="mt-2 text-gray-600">
-                Search and compare airfoils for your next project
-              </p>
-            </div>
-            <SearchBar camberRanges={camberRanges} thicknessRanges={thicknessRanges} applications={applications} />
-            <div class="mt-6">
-              <AirfoilGrid airfoils={airfoils} />
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-
-    <!-- Right Banner Ad -->
-    <aside class="hidden xl:flex w-48 items-center justify-center px-4">
-      <div class="w-48 h-96 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-lg font-semibold">
-        Ad
-      </div>
-    </aside>
+    </main>
   </div>
 
   <ComparisonBanner />

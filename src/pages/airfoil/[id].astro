@@ -1,7 +1,9 @@
 ---
-import AirfoilLayout from '../../layouts/AirfoilLayout.astro';
+import Layout from '../../layouts/Layout.astro';
+import Sidebar from '../../components/layout/Sidebar.astro';
 import AirfoilBanner from '../../components/airfoil/AirfoilBanner.astro';
 import AirfoilTabs from '../../components/airfoil/AirfoilTabs.astro';
+import AirfoilTabContents from '../../components/airfoil/AirfoilTabContents.astro';
 import MetadataCard from '../../components/airfoil/MetadataCard.astro';
 import WingletConfigCard from '../../components/airfoil/WingletConfigCard.astro';
 import CoordinateDataCard from '../../components/airfoil/CoordinateDataCard.astro';
@@ -10,6 +12,7 @@ import PerformanceCard from '../../components/airfoil/PerformanceCard.astro';
 import DragPolarCard from '../../components/airfoil/DragPolarCard.astro';
 import StructuralPropertiesCard from '../../components/airfoil/StructuralPropertiesCard.astro';
 import airfoils from '../../data/airfoils.json';
+
 export const prerender = true;
 export async function getStaticPaths() {
   return Object.keys(airfoils).map((id) => ({ params: { id } }));
@@ -34,99 +37,84 @@ if (airfoil.name.startsWith('NACA')) {
     thickness = airfoil.name.slice(7, 9);
   }
 }
+// Sidebar props
+const applications = [
+  "UAV",
+  "General Aviation",
+  "Glider",
+  "High-lift",
+  "Supersonic",
+  "Model Aircraft"
+];
+const popularAirfoils = Object.entries(airfoils)
+  .slice(0, 5)
+  .map(([id, airfoil]) => ({ id, name: airfoil.name }));
 ---
-<AirfoilLayout title={`${airfoil.name} - AeroFoilPro`}>
-  <!-- Removed Breadcrumb Navigation as requested -->
-  
-  <AirfoilBanner name={airfoil.name} description={airfoil.description} />
-  
-  <AirfoilTabs />
-  
-  <!-- Add back the geometry-content section with only CoordinateDataCard and MetadataCard -->
-  <div id="geometry-content" class="airfoil-tab-content active">
-    <div class="mt-6 space-y-6">
-      <CoordinateDataCard coordinates={airfoil.coordinates} />
-      <MetadataCard name={airfoil.name} />
-    </div>
+<Layout title={`${airfoil.name} - AeroFoilPro`}>
+  <div class="flex w-full">
+    <Sidebar popularAirfoils={popularAirfoils} applications={applications} />
+    <main class="flex-1 pl-4">
+      <div class="max-w-7xl mx-auto">
+        <AirfoilBanner name={airfoil.name} description={airfoil.description} />
+        <AirfoilTabs />
+        <AirfoilTabContents airfoil={airfoil} />
+      </div>
+    </main>
   </div>
-  
-  <div id="performance-content" class="airfoil-tab-content">
-    <div class="mt-6">
-      <PerformanceCard name={airfoil.name} />
-    </div>
-  </div>
-  
-  <div id="polar-content" class="airfoil-tab-content">
-    <div class="mt-6">
-      <DragPolarCard name={airfoil.name} />
-    </div>
-  </div>
-  
-  <div id="structural-content" class="airfoil-tab-content">
-    <div class="mt-6">
-      <StructuralPropertiesCard name={airfoil.name} />
-    </div>
-  </div>
-  
-  <div id="winglets-content" class="airfoil-tab-content">
-    <div class="mt-6">
-      <WingletConfigCard airfoilName={airfoil.name} />
-    </div>
-  </div>
-  
-  <div id="3d-content" class="airfoil-tab-content">
-    <div class="mt-6">
-      <Model3DCard name={airfoil.name} coordinates={airfoil.coordinates} />
-    </div>
-  </div>
-</AirfoilLayout>
 
-<!-- Inject airfoil data as a global variable, as a JSON string, and parse it in the browser -->
-<script is:inline>
-  window.currentAirfoilData = JSON.parse(`${JSON.stringify(airfoil)}`);
-  const airfoilData = window.currentAirfoilData;
-  console.log('[DEBUG] window.currentAirfoilData:', window.currentAirfoilData);
-</script>
+  <!-- Inject airfoil data as a global variable, as a JSON string, and parse it in the browser -->
+  <script is:inline define:vars={{ id, airfoil }}>
+    window.currentAirfoilData = {
+      id: id,
+      name: airfoil.name,
+      description: airfoil.description || "",
+      coordinates: airfoil.coordinates || []
+    };
+    const airfoilData = window.currentAirfoilData;
+    console.log('[DEBUG] window.currentAirfoilData:', window.currentAirfoilData);
+  </script>
 
-<script is:inline>
-function waitForStorage(callback) {
-  if (window.storage) {
-    callback();
-  } else {
-    setTimeout(() => waitForStorage(callback), 50);
-  }
-}
-
-console.log('[DEBUG] airfoilData used for Recently Viewed:', airfoilData);
-
-waitForStorage(() => {
-  window.storage.addToRecentlyViewed(airfoilData);
-  updateRecentlyViewedSidebar();
-});
-
-function updateRecentlyViewedSidebar() {
-  const recent = window.storage.get('recentlyViewed');
-  console.log('[DEBUG] recentlyViewed from storage:', recent);
-  const recentlyViewedList = document.getElementById('recentlyViewed');
-  if (recentlyViewedList) {
-    recentlyViewedList.innerHTML = '';
-    if (recent.length === 0) {
-      recentlyViewedList.innerHTML = '<li class="pl-2 text-gray-700">No recently viewed airfoils.</li>';
-    } else {
-      recent.forEach(airfoil => {
-        recentlyViewedList.innerHTML += `
-          <li class="pl-2 text-gray-700">
-            <a href="/airfoil/${airfoil.id}" class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded">
-              ${airfoil.name}
-            </a>
-          </li>
-        `;
-      });
+  <script is:inline>
+    function waitForStorage(callback) {
+      if (window.storage) {
+        callback();
+      } else {
+        setTimeout(() => waitForStorage(callback), 50);
+      }
     }
-  }
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-  waitForStorage(updateRecentlyViewedSidebar);
-});
-</script>
+    const airfoilData = window.currentAirfoilData;
+    console.log('[DEBUG] airfoilData used for Recently Viewed:', airfoilData);
+
+    waitForStorage(() => {
+      window.storage.addToRecentlyViewed(airfoilData);
+      updateRecentlyViewedSidebar();
+    });
+
+    function updateRecentlyViewedSidebar() {
+      const recent = window.storage.get('recentlyViewed');
+      console.log('[DEBUG] recentlyViewed from storage:', recent);
+      const recentlyViewedList = document.getElementById('recentlyViewed');
+      if (recentlyViewedList) {
+        recentlyViewedList.innerHTML = '';
+        if (recent.length === 0) {
+          recentlyViewedList.innerHTML = '<li class="pl-2 text-gray-700">No recently viewed airfoils.</li>';
+        } else {
+          recent.forEach(airfoil => {
+            recentlyViewedList.innerHTML += `
+              <li class="pl-2 text-gray-700">
+                <a href="/airfoil/${airfoil.id}" class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded">
+                  ${airfoil.name}
+                </a>
+              </li>
+            `;
+          });
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      waitForStorage(updateRecentlyViewedSidebar);
+    });
+  </script>
+</Layout>
