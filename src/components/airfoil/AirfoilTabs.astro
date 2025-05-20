@@ -28,10 +28,14 @@ const tabs = [
 <script>
   // Tab switching functionality
   document.addEventListener('DOMContentLoaded', () => {
+    console.log('[DEBUG] Tab initialization starting...');
+    
     const tabs = document.querySelectorAll('.airfoil-tab');
     const contentSections = document.querySelectorAll('.airfoil-tab-content');
     
     function activateTab(tabId: string) {
+      console.log('[DEBUG] Activating tab:', tabId);
+      
       // Update tab buttons
       tabs.forEach(tab => {
         if (tab.getAttribute('data-tab') === tabId) {
@@ -54,12 +58,24 @@ const tabs = [
       
       // Store active tab in session storage
       sessionStorage.setItem('activeAirfoilTab', tabId);
+      console.log('[DEBUG] Saved to sessionStorage:', tabId);
     }
+    
+    // Debug current sessionStorage state
+    console.log('[DEBUG] Current sessionStorage:', {
+      activeAirfoilTab: sessionStorage.getItem('activeAirfoilTab'),
+      allKeys: Object.keys(sessionStorage)
+    });
     
     // Set initial active tab from storage or default to first tab
     const savedTab = sessionStorage.getItem('activeAirfoilTab');
+    console.log('[DEBUG] Saved tab from storage:', savedTab);
+    
     const firstTabId = tabs.length > 0 ? tabs[0].getAttribute('data-tab') : null;
+    console.log('[DEBUG] First tab ID:', firstTabId);
+    
     const initialTabId = savedTab || firstTabId;
+    console.log('[DEBUG] Initial tab ID to activate:', initialTabId);
     
     if (initialTabId) {
       activateTab(initialTabId);

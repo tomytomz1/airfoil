@@ -116,5 +116,13 @@ const popularAirfoils = Object.entries(airfoils)
     document.addEventListener('DOMContentLoaded', () => {
       waitForStorage(updateRecentlyViewedSidebar);
     });
+
+    // Only clear on navigation, not on refresh
+    if (performance && performance.getEntriesByType) {
+      const nav = performance.getEntriesByType('navigation')[0];
+      if (nav && nav.type === 'navigate') {
+        sessionStorage.removeItem('activeAirfoilTab');
+      }
+    }
   </script>
 </Layout>
