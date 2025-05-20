@@ -199,6 +199,17 @@ const AirfoilViewer = ({ name, coordinates, description = "" }) => {
     mountRef.current.innerHTML = '';
     mountRef.current.appendChild(renderer.domElement);
     
+    // Expose a global resize handler
+    window.triggerAirfoil3DResize = () => {
+      if (rendererRef.current && mountRef.current && cameraRef.current) {
+        const width = mountRef.current.clientWidth;
+        const height = mountRef.current.clientHeight;
+        rendererRef.current.setSize(width, height);
+        cameraRef.current.aspect = width / height;
+        cameraRef.current.updateProjectionMatrix();
+      }
+    };
+    
     // Setup lighting
     setupLighting(lightingPreset);
     
@@ -246,6 +257,7 @@ const AirfoilViewer = ({ name, coordinates, description = "" }) => {
     
     // Clean up on unmount
     return () => {
+      delete window.triggerAirfoil3DResize;
       window.removeEventListener('resize', handleResize);
       
       if (mountRef.current) {

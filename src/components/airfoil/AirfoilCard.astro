@@ -6,6 +6,46 @@ interface Props {
 }
 
 const { airfoil } = Astro.props;
+
+function getAirfoilViewBox(coords) {
+  if (!coords || coords.length === 0) return '0 0 1 0.2';
+  const xs = coords.map(([x, y]) => x);
+  const ys = coords.map(([x, y]) => y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const padX = (maxX - minX) * 0.05;
+  const padY = (maxY - minY) * 0.15;
+  return `${minX - padX} ${minY - padY} ${(maxX - minX) + 2 * padX} ${(maxY - minY) + 2 * padY}`;
+}
+
+function getPolylinePoints(coords) {
+  if (!coords || coords.length === 0) return '';
+  const ys = coords.map(([x, y]) => y);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  return coords.map(([x, y]) => `${x},${maxY + minY - y}`).join(' ');
+}
+
+function getSmoothPath(coords) {
+  if (!coords || coords.length < 2) return '';
+  const ys = coords.map(([x, y]) => y);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  // Flip Y for SVG
+  const pts = coords.map(([x, y]) => [x, maxY + minY - y]);
+  let d = `M ${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i === 0 ? i : i - 1];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] || p2;
+    // Catmull-Rom to Bezier conversion
+    const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2[0]},${p2[1]}`;
+  }
+  return d;
+}
 ---
 
 <div 
@@ -18,6 +58,28 @@ const { airfoil } = Astro.props;
     <div class="flex justify-between items-start">
       <div>
         <h3 class="text-lg font-medium text-gray-900">{airfoil.name}</h3>
+        {airfoil.coordinates && airfoil.coordinates.length > 0 && (
+          <div class="relative">
+            <svg
+              viewBox={getAirfoilViewBox(airfoil.coordinates)}
+              width="100%"
+              height="80"
+              style="margin: 0.5rem 0;"
+              preserveAspectRatio="xMidYMid meet"
+              class="airfoil-preview"
+              data-coordinates={JSON.stringify(airfoil.coordinates)}
+            >
+              <polyline
+                points={getPolylinePoints(airfoil.coordinates)}
+                fill="none"
+                stroke="#2563eb"
+                stroke-width="0.008"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+        )}
         <p class="text-sm text-gray-600">{airfoil.description || 'No description available'}</p>
       </div>
       <button 
@@ -32,13 +94,7 @@ const { airfoil } = Astro.props;
       </button>
     </div>
     
-    <div class="mt-3 border-b border-gray-200 pb-3">
-      <canvas 
-        class="airfoil-canvas w-full h-16" 
-        data-coords={JSON.stringify(airfoil.coordinates)}
-        aria-label={`Airfoil shape visualization for ${airfoil.name}`}
-      ></canvas>
-    </div>
+    <div class="mt-3 border-b border-gray-200 pb-3"></div>
     
     <div class="mt-3 grid grid-cols-2 gap-2">
       <div>
@@ -127,7 +183,7 @@ function updateFavoritesSidebar() {
   }
 }
 
-// Initialize favorite buttons
+// Initialize favorite buttons and zoom overlay
 document.addEventListener('DOMContentLoaded', () => {
   waitForStorage(() => {
     document.querySelectorAll('.favorite-btn').forEach(btn => {
@@ -149,6 +205,77 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     updateFavoritesSidebar();
+  });
+
+  // Initialize zoom overlay
+  document.querySelectorAll('.airfoil-preview').forEach(preview => {
+    const overlay = preview.parentElement.querySelector('.zoom-overlay');
+    const backdrop = preview.parentElement.querySelector('.zoom-backdrop');
+    if (!overlay || !backdrop) return;
+
+    let timeoutId;
+
+    function showZoom() {
+      clearTimeout(timeoutId);
+      const rect = preview.getBoundingClientRect();
+      overlay.style.display = 'block';
+      backdrop.style.display = 'block';
+      overlay.classList.remove('hidden');
+      backdrop.classList.remove('hidden');
+      overlay.style.top = `${rect.top}px`;
+      overlay.style.left = `${rect.left}px`;
+
+      // Constrain overlay to main content area
+      const overlayWidth = 600; // SVG width
+      const overlayHeight = 400; // SVG height
+      const padding = 40; // extra margin from edge
+      let left = rect.left;
+      let top = rect.top;
+      // Find main content container
+      const container = document.querySelector('.max-w-7xl.mx-auto');
+      let bounds;
+      if (container) {
+        bounds = container.getBoundingClientRect();
+      } else {
+        bounds = { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight, width: window.innerWidth, height: window.innerHeight };
+      }
+      // Clamp left/right
+      if (left + overlayWidth > bounds.right - padding) {
+        left = bounds.right - overlayWidth - padding;
+      }
+      if (left < bounds.left + padding) {
+        left = bounds.left + padding;
+      }
+      // Clamp top/bottom
+      if (top + overlayHeight > bounds.bottom - padding) {
+        top = bounds.bottom - overlayHeight - padding;
+      }
+      if (top < bounds.top + padding) {
+        top = bounds.top + padding;
+      }
+      overlay.style.left = `${left}px`;
+      overlay.style.top = `${top}px`;
+    }
+
+    function hideZoom() {
+      overlay.classList.add('hidden');
+      backdrop.classList.add('hidden');
+      timeoutId = setTimeout(() => {
+        overlay.style.display = 'none';
+        backdrop.style.display = 'none';
+      }, 100);
+    }
+
+    preview.addEventListener('mouseenter', showZoom);
+    preview.addEventListener('mouseleave', hideZoom);
+    overlay.addEventListener('mouseenter', () => clearTimeout(timeoutId));
+    overlay.addEventListener('mouseleave', hideZoom);
+    backdrop.addEventListener('mouseenter', () => {
+      overlay.classList.add('hidden');
+      backdrop.classList.add('hidden');
+      overlay.style.display = 'none';
+      backdrop.style.display = 'none';
+    });
   });
 });
 </script> 

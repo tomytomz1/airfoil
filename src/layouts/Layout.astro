@@ -74,38 +74,37 @@ const { title } = Astro.props;
         }
       };
     </script>
-    <header class="bg-white border-b border-gray-200">
+    <header class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
       <div class="container mx-auto px-4 py-3 flex justify-between items-center">
         <a href="/" class="text-xl font-bold text-blue-600">AeroFoilPro</a>
-        <!-- Removed navigation as requested -->
         <div class="flex items-center space-x-2">
           <button class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">Sign In</button>
         </div>
       </div>
     </header>
 
-    <div class="flex w-full bg-gray-50 min-h-screen">
+    <div class="flex w-full bg-gray-50 min-h-screen pt-[64px] pb-[88px]">
       <!-- Left Banner Ad -->
-      <aside class="hidden xl:flex w-48 items-center justify-center px-4">
-        <div class="w-48 h-96 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-lg font-semibold">
+      <aside class="hidden xl:flex fixed left-0 top-[64px] z-40 h-[calc(100vh-64px)] w-[232px] items-center justify-center px-4">
+        <div class="w-[200px] h-[600px] bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-lg font-semibold">
           Ad
         </div>
       </aside>
 
       <!-- Main Content Area -->
-      <div class="flex flex-1 mt-8">
+      <div class="flex flex-1 xl:ml-[232px] xl:mr-[232px]">
         <slot />
       </div>
 
       <!-- Right Banner Ad -->
-      <aside class="hidden xl:flex w-48 items-center justify-center px-4">
-        <div class="w-48 h-96 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-lg font-semibold">
+      <aside class="hidden xl:flex fixed right-0 top-[64px] z-40 h-[calc(100vh-64px)] w-[232px] items-center justify-center px-4">
+        <div class="w-[200px] h-[600px] bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-lg font-semibold">
           Ad
         </div>
       </aside>
     </div>
 
-    <footer class="bg-white border-t border-gray-200 mt-12">
+    <footer class="bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-50">
       <div class="container mx-auto px-4 py-6">
         <div class="flex flex-col md:flex-row justify-between items-center">
           <p class="text-gray-600 text-sm">&copy; 2024 AeroFoilPro. All rights reserved.</p>

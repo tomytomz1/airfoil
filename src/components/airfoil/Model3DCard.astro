@@ -40,4 +40,11 @@ const { name, coordinates } = Astro.props;
   document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('download3D')?.addEventListener('click', window.triggerSTLDownload);
   });
+
+  // Listen for 3D tab activation and trigger resize
+  window.addEventListener('airfoil-3d-tab-activated', () => {
+    if (window.triggerAirfoil3DResize) {
+      window.triggerAirfoil3DResize();
+    }
+  });
 </script>

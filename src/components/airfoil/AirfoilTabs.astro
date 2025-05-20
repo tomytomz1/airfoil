@@ -87,6 +87,9 @@ const tabs = [
         const tabId = tab.getAttribute('data-tab');
         if (tabId) {
           activateTab(tabId);
+          if (tabId === '3d') {
+            window.dispatchEvent(new Event('airfoil-3d-tab-activated'));
+          }
         }
       });
     });
