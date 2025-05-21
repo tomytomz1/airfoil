@@ -44,29 +44,54 @@ const popularAirfoils = Object.entries(airfoils)
 ---
 
 <Layout title="AeroFoilPro - Airfoil Database">
-  <div class="flex w-full">
-    <Sidebar popularAirfoils={popularAirfoils} applications={applications} />
-    <main class="flex-1 pl-4">
-      <div class="max-w-7xl mx-auto">
-        <div class="mb-6">
-          <h1 class="text-3xl font-bold text-gray-900">
-            Airfoil Database
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Search and compare airfoils for your next project
-          </p>
+  <Sidebar popularAirfoils={popularAirfoils} applications={applications} slot="sidebar" />
+  <div class="max-w-7xl mx-auto">
+    <div class="sticky top-[64px] z-20 bg-gray-50 pb-4">
+      <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">
+          Airfoil Database
+        </h1>
+        <p class="mt-2 text-gray-600">
+          Search and compare airfoils for your next project
+        </p>
+      </div>
+      <SearchBar camberRanges={camberRanges} thicknessRanges={thicknessRanges} applications={applications} />
+    </div>
+    <div class="sticky top-[144px] z-10 bg-gray-50 pb-2">
+      <div class="flex justify-between items-center mb-4">
+        <div id="resultsCount" class="text-gray-600">
+          Showing {Object.keys(airfoils).length} airfoils
         </div>
-        <SearchBar camberRanges={camberRanges} thicknessRanges={thicknessRanges} applications={applications} />
-        <div class="mt-6">
-          <AirfoilGrid airfoils={airfoils} />
+        <div class="flex items-center space-x-3">
+          <span class="text-gray-600">View:</span>
+          <button id="gridViewBtn" class="p-1 bg-blue-100 text-blue-800 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Grid view">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+          </button>
+          <button id="listViewBtn" class="p-1 text-gray-400 hover:text-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-gray-500" aria-label="List view">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+          </button>
+          <select id="sortSelect" class="border border-gray-300 rounded-md px-2 py-1 text-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Sort airfoils by">
+            <option value="popular">Sort by: Popular</option>
+            <option value="camberAsc">Camber (low to high)</option>
+            <option value="camberDesc">Camber (high to low)</option>
+            <option value="thicknessAsc">Thickness (low to high)</option>
+            <option value="thicknessDesc">Thickness (high to low)</option>
+            <option value="nameAsc">Name (A to Z)</option>
+            <option value="nameDesc">Name (Z to A)</option>
+          </select>
         </div>
       </div>
-    </main>
+    </div>
+    <div class="mt-6">
+      <AirfoilGrid airfoils={airfoils} />
+    </div>
   </div>
-
   <ComparisonBanner />
   <ComparisonModal />
-
   <!-- Error container -->
   <div id="errorContainer" class="fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded hidden" role="alert">
   </div>

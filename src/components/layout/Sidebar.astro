@@ -9,65 +9,67 @@ interface Props {
 const { popularAirfoils, applications } = Astro.props;
 ---
 
-<aside class="md:w-64 flex-shrink-0" role="complementary">
-  <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="text-lg font-medium text-gray-900">Collections</h2>
-    </div>
+<aside class="md:w-64 flex-shrink-0" role="complementary" style="overflow: hidden;">
+  <div id="sidebar-content">
+    <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-medium text-gray-900">Collections</h2>
+      </div>
 
-    <!-- Recently Viewed -->
-    <div>
-      <h3 class="font-medium text-blue-600">Recently Viewed</h3>
-      <ul id="recentlyViewed" class="space-y-2 mt-2" role="list"></ul>
-    </div>
-    
-    <!-- Favorites -->
-    <div class="border-t border-gray-200 my-3 pt-3">
-      <h3 class="font-medium text-blue-600">Favorites</h3>
-      <ul id="favorites" class="space-y-2 mt-2" role="list"></ul>
-    </div>
-    
-    <!-- Popular Airfoils -->
-    <div class="border-t border-gray-200 my-3 pt-3">
-      <h3 class="font-medium text-blue-600">Popular Airfoils</h3>
-      <ul class="space-y-2 mt-2" role="list">
-        {popularAirfoils.map(airfoil => (
-          <li class="pl-2 text-gray-700">
-            <a 
-              href={`/airfoil/${airfoil.id}`} 
-              class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
-            >
-              {airfoil.name}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-    
-    <!-- Applications -->
-    <div class="border-t border-gray-200 my-3 pt-3">
-      <h3 class="font-medium text-blue-600">Applications</h3>
-      <ul class="space-y-2 mt-2" role="list">
-        {applications.map(app => (
-          <li class="pl-2 text-gray-700">
-            <button 
-              class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
-              data-application={app}
-            >
-              {app}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-    
-    <!-- Insights -->
-    <div class="border-t border-gray-200 my-3 pt-3">
-      <h3 class="font-medium text-blue-600">Insights</h3>
-      <div class="mt-2 p-3 bg-blue-50 rounded-md">
-        <p class="text-sm text-gray-700">
-          Similar to Clark Y? Try the Selig S1223 for higher lift capacity.
-        </p>
+      <!-- Recently Viewed -->
+      <div>
+        <h3 class="font-medium text-blue-600">Recently Viewed</h3>
+        <ul id="recentlyViewed" class="space-y-2 mt-2" role="list"></ul>
+      </div>
+      
+      <!-- Favorites -->
+      <div class="border-t border-gray-200 my-3 pt-3">
+        <h3 class="font-medium text-blue-600">Favorites</h3>
+        <ul id="favorites" class="space-y-2 mt-2" role="list"></ul>
+      </div>
+      
+      <!-- Popular Airfoils -->
+      <div class="border-t border-gray-200 my-3 pt-3">
+        <h3 class="font-medium text-blue-600">Popular Airfoils</h3>
+        <ul class="space-y-2 mt-2" role="list">
+          {popularAirfoils.map(airfoil => (
+            <li class="pl-2 text-gray-700">
+              <a 
+                href={`/airfoil/${airfoil.id}`} 
+                class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+              >
+                {airfoil.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+      
+      <!-- Applications -->
+      <div class="border-t border-gray-200 my-3 pt-3">
+        <h3 class="font-medium text-blue-600">Applications</h3>
+        <ul class="space-y-2 mt-2" role="list">
+          {applications.map(app => (
+            <li class="pl-2 text-gray-700">
+              <button 
+                class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+                data-application={app}
+              >
+                {app}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+      
+      <!-- Insights -->
+      <div class="border-t border-gray-200 my-3 pt-3">
+        <h3 class="font-medium text-blue-600">Insights</h3>
+        <div class="mt-2 p-3 bg-blue-50 rounded-md">
+          <p class="text-sm text-gray-700">
+            Similar to Clark Y? Try the Selig S1223 for higher lift capacity.
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -150,5 +152,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, 100);
   });
+
+  // Sidebar dynamic scaling
+  function scaleSidebarContent() {
+    const sidebar = document.querySelector('aside[role="complementary"]');
+    const content = document.getElementById('sidebar-content');
+    if (!sidebar || !content) return;
+    // Reset scale
+    content.style.transform = '';
+    content.style.transformOrigin = 'top left';
+    // Calculate available and actual height
+    const available = sidebar.clientHeight;
+    const actual = content.scrollHeight;
+    if (actual > available) {
+      const scale = available / actual;
+      content.style.transform = `scale(${scale})`;
+    }
+  }
+  scaleSidebarContent();
+  window.addEventListener('resize', scaleSidebarContent);
 });
 </script> 

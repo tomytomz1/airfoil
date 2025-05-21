@@ -84,27 +84,27 @@ const { title } = Astro.props;
     </header>
 
     <div class="flex w-full bg-gray-50 min-h-screen pt-[64px] pb-[88px]">
-      <!-- Left Banner Ad -->
-      <aside class="hidden xl:flex fixed left-0 top-[64px] z-40 h-[calc(100vh-64px)] w-[232px] items-center justify-center px-4">
-        <div class="w-[200px] h-[600px] bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-lg font-semibold">
-          Ad
+      <!-- Sidebar (fixed, non-scrollable) -->
+      <aside class="hidden md:flex fixed left-0 top-[64px] z-30 h-[calc(100vh-64px)] w-64">
+        <div id="sidebar-outer" class="h-full w-full bg-white border-r border-gray-200" style="overflow: hidden;">
+          <slot name="sidebar" />
         </div>
       </aside>
 
       <!-- Main Content Area -->
-      <div class="flex flex-1 xl:ml-[232px] xl:mr-[232px]">
+      <div class="flex-1 pl-4 md:ml-64 xl:mr-[332px]">
         <slot />
       </div>
 
       <!-- Right Banner Ad -->
-      <aside class="hidden xl:flex fixed right-0 top-[64px] z-40 h-[calc(100vh-64px)] w-[232px] items-center justify-center px-4">
-        <div class="w-[200px] h-[600px] bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-lg font-semibold">
+      <aside class="hidden xl:flex fixed right-0 top-[64px] z-40 h-[calc(100vh-64px)] w-[332px] items-center justify-center px-4">
+        <div class="w-[300px] h-[600px] bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-lg font-semibold">
           Ad
         </div>
       </aside>
     </div>
 
-    <footer class="bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-50">
+    <footer id="main-footer" class="bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-50">
       <div class="container mx-auto px-4 py-6">
         <div class="flex flex-col md:flex-row justify-between items-center">
           <p class="text-gray-600 text-sm">&copy; 2024 AeroFoilPro. All rights reserved.</p>
@@ -119,5 +119,37 @@ const { title } = Astro.props;
 
     <slot name="after-footer" />
     <script src="/scripts/favorite.js" type="module"></script>
+    <script>
+      function scaleSidebarContent() {
+        const outer = document.getElementById('sidebar-outer');
+        const footer = document.getElementById('main-footer');
+        if (!outer) return;
+        const content = outer.firstElementChild;
+        if (!content) return;
+        // Reset scale
+        content.style.transform = '';
+        content.style.transformOrigin = 'top left';
+        // Calculate available and actual height
+        let available = outer.clientHeight;
+        if (footer) {
+          // Get the height of the footer (including padding)
+          const footerHeight = footer.offsetHeight;
+          // Check if the sidebar and footer overlap in the viewport
+          const sidebarRect = outer.getBoundingClientRect();
+          const footerRect = footer.getBoundingClientRect();
+          // If the footer is visible and overlaps the sidebar, subtract its height
+          if (footerRect.top < window.innerHeight && sidebarRect.bottom > footerRect.top) {
+            available -= (sidebarRect.bottom - footerRect.top);
+          }
+        }
+        const actual = content.scrollHeight;
+        if (actual > available) {
+          const scale = available / actual;
+          content.style.transform = `scale(${scale})`;
+        }
+      }
+      window.addEventListener('DOMContentLoaded', scaleSidebarContent);
+      window.addEventListener('resize', scaleSidebarContent);
+    </script>
   </body>
 </html> 

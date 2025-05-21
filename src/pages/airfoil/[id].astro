@@ -51,15 +51,11 @@ const popularAirfoils = Object.entries(airfoils)
   .map(([id, airfoil]) => ({ id, name: airfoil.name }));
 ---
 <Layout title={`${airfoil.name} - AeroFoilPro`}>
-  <div class="flex w-full">
-    <Sidebar popularAirfoils={popularAirfoils} applications={applications} />
-    <main class="flex-1 pl-4">
-      <div class="max-w-7xl mx-auto">
-        <AirfoilBanner name={airfoil.name} description={airfoil.description} />
-        <AirfoilTabs />
-        <AirfoilTabContents airfoil={airfoil} />
-      </div>
-    </main>
+  <Sidebar popularAirfoils={popularAirfoils} applications={applications} slot="sidebar" />
+  <div class="max-w-7xl mx-auto">
+    <AirfoilBanner name={airfoil.name} description={airfoil.description} />
+    <AirfoilTabs />
+    <AirfoilTabContents airfoil={airfoil} />
   </div>
 
   <!-- Inject airfoil data as a global variable, as a JSON string, and parse it in the browser -->
