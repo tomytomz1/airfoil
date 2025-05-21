@@ -19,10 +19,32 @@ export class App {
       }
       
       this.airfoils = await response.json();
+      console.log('[DEBUG] Loaded airfoil keys:', Object.keys(this.airfoils));
+      if (this.airfoils && Object.keys(this.airfoils).length > 0) {
+        const firstKey = Object.keys(this.airfoils)[0];
+        console.log('[DEBUG] Sample airfoil entry:', firstKey, this.airfoils[firstKey]);
+      }
       
       // Initialize managers
       this.searchManager = new SearchManager(this.airfoils);
       this.comparisonManager = new ComparisonManager(this.airfoils);
+      
+      // Auto-apply Application filter from query param if present
+      const params = new URLSearchParams(window.location.search);
+      const appParam = params.get('application');
+      if (appParam) {
+        // Wait for DOM to be ready
+        setTimeout(() => {
+          const dropdown = document.getElementById('applicationDropdown');
+          if (dropdown) {
+            const checkbox = Array.from(dropdown.querySelectorAll('input[type="checkbox"]')).find(cb => cb.value === appParam);
+            if (checkbox && !checkbox.checked) {
+              checkbox.checked = true;
+              checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          }
+        }, 100);
+      }
       
       // Set up event listeners
       this.setupEventListeners();

@@ -31,4 +31,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, 50);
   }
-}); 
+});
+
+// Sidebar dynamic scaling for all pages
+function scaleSidebarContent() {
+  const sidebar = document.querySelector('aside[role="complementary"]');
+  const content = document.getElementById('sidebar-content');
+  if (!sidebar || !content) return;
+  // Reset scale
+  content.style.transform = '';
+  content.style.transformOrigin = 'top left';
+  // Calculate available and actual height
+  const available = sidebar.clientHeight;
+  const actual = content.scrollHeight;
+  if (actual > available) {
+    const scale = available / actual;
+    content.style.transform = `scale(${scale})`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', scaleSidebarContent);
+window.addEventListener('resize', scaleSidebarContent); 

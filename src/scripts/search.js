@@ -112,7 +112,9 @@ export class SearchManager {
       // Camber filter
       if (this.filterState.camber.length > 0) {
         const matchesCamber = this.filterState.camber.some(range => {
-          const [min, max] = range.split('-').map(Number);
+          let [minStr, maxStr] = range.replace(/%/g, '').split('-');
+          let min = Number(minStr);
+          let max = maxStr && maxStr.includes('+') ? Infinity : Number((maxStr || '').replace('+', ''));
           return airfoil.camber >= min && airfoil.camber <= max;
         });
         if (!matchesCamber) return false;
@@ -121,7 +123,9 @@ export class SearchManager {
       // Thickness filter
       if (this.filterState.thickness.length > 0) {
         const matchesThickness = this.filterState.thickness.some(range => {
-          const [min, max] = range.split('-').map(Number);
+          let [minStr, maxStr] = range.replace(/%/g, '').split('-');
+          let min = Number(minStr);
+          let max = maxStr && maxStr.includes('+') ? Infinity : Number((maxStr || '').replace('+', ''));
           return airfoil.thickness >= min && airfoil.thickness <= max;
         });
         if (!matchesThickness) return false;
@@ -129,8 +133,10 @@ export class SearchManager {
       
       // Applications filter
       if (this.filterState.applications.length > 0) {
-        const matchesApplications = this.filterState.applications.some(app =>
-          (airfoil.applications || []).includes(app)
+        const matchesApplications = this.filterState.applications.some(selectedApp =>
+          (airfoil.applications || []).some(app =>
+            app.toLowerCase().includes(selectedApp.toLowerCase())
+          )
         );
         if (!matchesApplications) return false;
       }
@@ -165,12 +171,26 @@ export class SearchManager {
     if (resultsCount) {
       resultsCount.textContent = `Showing ${airfoils.length} airfoils`;
     }
-    
+
+    // Hide/show airfoil cards based on filtered results
+    const visibleIds = new Set(airfoils.map(([id]) => id));
+    document.querySelectorAll('.airfoil-card').forEach(card => {
+      const id = card.getAttribute('data-id');
+      if (visibleIds.has(id)) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
     // Update grid/list view
     this.updateView();
-    
+
     // Update active filters
     this.updateActiveFilters();
+
+    // Dispatch event for sticky positioning update
+    document.dispatchEvent(new CustomEvent('airfoilsUpdated'));
   }
   
   updateView() {
@@ -248,6 +268,35 @@ export class SearchManager {
     `;
     
     filterTags.appendChild(tag);
+
+    // Add event listener to remove filter on X click
+    const closeBtn = tag.querySelector('button');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        if (type === 'Search') {
+          this.filterState.search = '';
+          const searchBox = document.getElementById('searchBox');
+          if (searchBox) searchBox.value = '';
+        } else if (type === 'Camber') {
+          this.filterState.camber = this.filterState.camber.filter(v => v !== value);
+          // Uncheck the corresponding checkbox
+          document.querySelectorAll('#camberDropdown input[type="checkbox"]').forEach(cb => {
+            if (cb.value === value) cb.checked = false;
+          });
+        } else if (type === 'Thickness') {
+          this.filterState.thickness = this.filterState.thickness.filter(v => v !== value);
+          document.querySelectorAll('#thicknessDropdown input[type="checkbox"]').forEach(cb => {
+            if (cb.value === value) cb.checked = false;
+          });
+        } else if (type === 'Application') {
+          this.filterState.applications = this.filterState.applications.filter(v => v !== value);
+          document.querySelectorAll('#applicationDropdown input[type="checkbox"]').forEach(cb => {
+            if (cb.value === value) cb.checked = false;
+          });
+        }
+        this.updateResults();
+      });
+    }
   }
   
   resetFilters() {

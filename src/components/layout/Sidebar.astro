@@ -54,6 +54,7 @@ const { popularAirfoils, applications } = Astro.props;
               <button 
                 class="hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
                 data-application={app}
+                onclick={`window.selectApplicationFilter && window.selectApplicationFilter(${JSON.stringify(app)})`}
               >
                 {app}
               </button>
@@ -152,24 +153,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, 100);
   });
-
-  // Sidebar dynamic scaling
-  function scaleSidebarContent() {
-    const sidebar = document.querySelector('aside[role="complementary"]');
-    const content = document.getElementById('sidebar-content');
-    if (!sidebar || !content) return;
-    // Reset scale
-    content.style.transform = '';
-    content.style.transformOrigin = 'top left';
-    // Calculate available and actual height
-    const available = sidebar.clientHeight;
-    const actual = content.scrollHeight;
-    if (actual > available) {
-      const scale = available / actual;
-      content.style.transform = `scale(${scale})`;
-    }
-  }
-  scaleSidebarContent();
-  window.addEventListener('resize', scaleSidebarContent);
 });
+
+// Add a global function to select an application filter from the sidebar
+window.selectApplicationFilter = function(app) {
+  // Find the corresponding checkbox in the Application dropdown
+  const dropdown = document.getElementById('applicationDropdown');
+  if (dropdown) {
+    const checkbox = Array.from(dropdown.querySelectorAll('input[type="checkbox"]')).find(cb => cb.value === app);
+    if (checkbox && !checkbox.checked) {
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    // Optionally, open the dropdown or scroll to the filter area
+    return;
+  }
+  // If not on the main page, redirect with query param
+  const url = new URL(window.location.origin + '/');
+  url.searchParams.set('application', app);
+  window.location.href = url.toString();
+};
 </script> 

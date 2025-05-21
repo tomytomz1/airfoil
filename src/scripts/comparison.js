@@ -139,6 +139,22 @@ export class ComparisonManager {
         });
       }
     }
+    // Update compare button states globally
+    this.updateCompareButtons();
+  }
+  
+  updateCompareButtons() {
+    const compareIds = new Set(this.comparisonItems);
+    document.querySelectorAll('.compare-btn').forEach(btn => {
+      const id = btn.getAttribute('data-id');
+      if (compareIds.has(id)) {
+        btn.classList.add('compare-selected');
+        btn.setAttribute('data-compare-state', 'selected');
+      } else {
+        btn.classList.remove('compare-selected');
+        btn.setAttribute('data-compare-state', 'unselected');
+      }
+    });
   }
   
   populateComparisonGrid() {
@@ -188,6 +204,9 @@ export class ComparisonManager {
         // Initialize canvas
         const canvas = card.querySelector('canvas');
         if (canvas) {
+          // Set canvas width and height to match display size for crisp drawing
+          canvas.width = canvas.clientWidth;
+          canvas.height = canvas.clientHeight;
           this.drawAirfoil(canvas, airfoil.coordinates);
         }
       }
@@ -204,10 +223,32 @@ export class ComparisonManager {
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
     
+    // Compute bounding box with padding
+    const xs = coordinates.map(([x, y]) => x);
+    const ys = coordinates.map(([x, y]) => y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const padX = (maxX - minX) * 0.05;
+    const padY = (maxY - minY) * 0.15;
+    const boxWidth = (maxX - minX) + 2 * padX;
+    const boxHeight = (maxY - minY) + 2 * padY;
+    
+    // Compute scale to fit the canvas while preserving aspect ratio
+    const scaleX = width / boxWidth;
+    const scaleY = height / boxHeight;
+    const scale = Math.min(scaleX, scaleY);
+    
+    // Center the airfoil in the canvas
+    const scaledWidth = boxWidth * scale;
+    const scaledHeight = boxHeight * scale;
+    const offsetX = (width - scaledWidth) / 2;
+    const offsetY = (height - scaledHeight) / 2;
+    
     // Set up coordinate system
     ctx.save();
-    ctx.translate(width * 0.1, height * 0.5);
-    ctx.scale(width * 0.8, -height * 0.8);
+    ctx.translate(offsetX, offsetY + scaledHeight); // move origin to bottom left of drawing area
+    ctx.scale(scale, -scale); // flip Y axis
+    ctx.translate(-minX + padX, -minY + padY);
     
     // Draw airfoil
     ctx.beginPath();

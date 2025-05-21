@@ -119,6 +119,7 @@ const { title } = Astro.props;
 
     <slot name="after-footer" />
     <script src="/scripts/favorite.js" type="module"></script>
+    <script src="/scripts/sidebar.js" defer></script>
     <script>
       function scaleSidebarContent() {
         const outer = document.getElementById('sidebar-outer');

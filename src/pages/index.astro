@@ -46,7 +46,9 @@ const popularAirfoils = Object.entries(airfoils)
 <Layout title="AeroFoilPro - Airfoil Database">
   <Sidebar popularAirfoils={popularAirfoils} applications={applications} slot="sidebar" />
   <div class="max-w-7xl mx-auto">
-    <div class="sticky top-[64px] z-20 bg-gray-50 pb-4">
+    <div class="sticky top-[64px] z-40 bg-gray-50 pb-4 first-sticky-element">
+      <!-- This creates a visual buffer that prevents content from peeking through -->
+      <div class="absolute inset-x-0 -top-8 h-8 bg-gray-50"></div>
       <div class="mb-6">
         <h1 class="text-3xl font-bold text-gray-900">
           Airfoil Database
@@ -57,32 +59,41 @@ const popularAirfoils = Object.entries(airfoils)
       </div>
       <SearchBar camberRanges={camberRanges} thicknessRanges={thicknessRanges} applications={applications} />
     </div>
-    <div class="sticky top-[144px] z-10 bg-gray-50 pb-2">
+    <div class="sticky z-30 bg-gray-50 pb-2 second-sticky-element">
+      <!-- Another buffer for this section -->
+      <div class="absolute inset-x-0 -top-2 h-2 bg-gray-50"></div>
       <div class="flex justify-between items-center mb-4">
         <div id="resultsCount" class="text-gray-600">
           Showing {Object.keys(airfoils).length} airfoils
         </div>
         <div class="flex items-center space-x-3">
           <span class="text-gray-600">View:</span>
-          <button id="gridViewBtn" class="p-1 bg-blue-100 text-blue-800 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Grid view">
+          <button id="gridViewBtn" class="p-1 bg-blue-100 text-blue-800 rounded focus:outline-none" aria-label="Grid view">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
           </button>
-          <button id="listViewBtn" class="p-1 text-gray-400 hover:text-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-gray-500" aria-label="List view">
+          <button id="listViewBtn" class="p-1 text-gray-400 hover:text-gray-600 rounded focus:outline-none" aria-label="List view">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
             </svg>
           </button>
-          <select id="sortSelect" class="border border-gray-300 rounded-md px-2 py-1 text-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Sort airfoils by">
-            <option value="popular">Sort by: Popular</option>
-            <option value="camberAsc">Camber (low to high)</option>
-            <option value="camberDesc">Camber (high to low)</option>
-            <option value="thicknessAsc">Thickness (low to high)</option>
-            <option value="thicknessDesc">Thickness (high to low)</option>
-            <option value="nameAsc">Name (A to Z)</option>
-            <option value="nameDesc">Name (Z to A)</option>
-          </select>
+          <!-- This wrapper ensures the dropdown shows above other content -->
+          <div class="relative" style="z-index: 45;">
+            <select 
+              id="sortSelect" 
+              class="border border-blue-300 rounded-md px-2 py-1 text-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Sort airfoils by"
+            >
+              <option value="popular">Sort by: Popular</option>
+              <option value="camberLowToHigh">Camber (low to high)</option>
+              <option value="camberHighToLow">Camber (high to low)</option>
+              <option value="thicknessLowToHigh">Thickness (low to high)</option>
+              <option value="thicknessHighToLow">Thickness (high to low)</option>
+              <option value="nameAtoZ">Name (A to Z)</option>
+              <option value="nameZtoA">Name (Z to A)</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -95,10 +106,59 @@ const popularAirfoils = Object.entries(airfoils)
   <!-- Error container -->
   <div id="errorContainer" class="fixed bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded hidden" role="alert">
   </div>
+  <script type="module" src="/src/scripts/app.js"></script>
 </Layout>
 
 <script>
   import { App } from '../scripts/app.js';
+</script>
+
+<script>
+let resizeTimeout;
+
+const updateStickyPosition = () => {
+  const firstSticky = document.querySelector('.first-sticky-element');
+  const secondSticky = document.querySelector('.second-sticky-element');
+  
+  if (firstSticky && secondSticky) {
+    const headerHeight = 64; // Your fixed header height
+    const firstHeight = firstSticky.getBoundingClientRect().height;
+    // Add an 8px buffer to prevent any peeking
+    secondSticky.style.top = `${headerHeight + firstHeight + 8}px`;
+    // Debug
+    console.log('Updated second sticky position to:', `${headerHeight + firstHeight + 8}px`);
+  }
+};
+
+// Add a scroll handler to further ensure no peeking
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 0 && window.scrollY < 100) {
+    // During the critical transition phase, make sure backgrounds are solid
+    document.querySelectorAll('.first-sticky-element, .second-sticky-element').forEach(el => {
+      el.style.backgroundColor = 'rgb(249, 250, 251)'; // bg-gray-50 equivalent
+    });
+  }
+});
+
+// Initial position setting
+document.addEventListener('DOMContentLoaded', () => {
+  updateStickyPosition();
+  
+  // Run again after a short delay to ensure all content is rendered
+  setTimeout(updateStickyPosition, 500);
+});
+
+// Handle window resize
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(updateStickyPosition, 100);
+});
+
+// Also update when all resources are loaded
+window.addEventListener('load', updateStickyPosition);
+
+// Listen for airfoil updates
+document.addEventListener('airfoilsUpdated', updateStickyPosition);
 </script>
 
 <script>
@@ -221,4 +281,230 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFavoritesSidebar();
   });
 });
+</script>
+
+<style>
+/* List view styles for airfoil cards */
+#airfoilGrid.list-view .airfoil-card {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 1rem;
+  gap: 1.5rem;
+  min-height: 160px;
+}
+#airfoilGrid.list-view .airfoil-card > .p-4 {
+  flex: 2;
+  padding: 0;
+}
+#airfoilGrid.list-view .airfoil-card .airfoil-preview {
+  max-width: 180px;
+  min-width: 120px;
+  height: 80px;
+  margin-right: 1.5rem;
+}
+#airfoilGrid.list-view .airfoil-card .bg-blue-50 {
+  flex: 1;
+  align-self: stretch;
+  margin-left: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background: none;
+  padding: 0;
+  color: #2563eb;
+  font-weight: 500;
+}
+#airfoilGrid.list-view .airfoil-card .mt-3 {
+  margin-top: 0.5rem;
+}
+#airfoilGrid.list-view .airfoil-card .flex.justify-between {
+  flex-direction: row;
+  align-items: flex-start;
+}
+#airfoilGrid.list-view .airfoil-card .flex.space-x-2 {
+  margin-top: 0.5rem;
+}
+body {
+  overflow-anchor: none;
+}
+#sortSelect, #sortSelect option {
+  position: relative;
+  z-index: 46;
+}
+html {
+  scroll-behavior: smooth;
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const gridViewBtn = document.getElementById('gridViewBtn');
+  const listViewBtn = document.getElementById('listViewBtn');
+  const grid = document.getElementById('airfoilGrid');
+
+  if (!gridViewBtn || !listViewBtn || !grid) return;
+
+  // Default to grid view
+  grid.classList.remove('list-view');
+  grid.classList.remove('grid-cols-1');
+  grid.classList.add('md:grid-cols-2', 'lg:grid-cols-3');
+  gridViewBtn.classList.add('bg-blue-100', 'text-blue-800');
+  gridViewBtn.classList.remove('text-gray-400');
+  listViewBtn.classList.remove('bg-blue-100', 'text-blue-800');
+  listViewBtn.classList.add('text-gray-400');
+
+  gridViewBtn.addEventListener('click', () => {
+    grid.classList.remove('list-view');
+    grid.classList.remove('grid-cols-1');
+    grid.classList.add('md:grid-cols-2', 'lg:grid-cols-3');
+    gridViewBtn.classList.add('bg-blue-100', 'text-blue-800');
+    gridViewBtn.classList.remove('text-gray-400');
+    listViewBtn.classList.remove('bg-blue-100', 'text-blue-800');
+    listViewBtn.classList.add('text-gray-400');
+  });
+
+  listViewBtn.addEventListener('click', () => {
+    grid.classList.add('list-view');
+    grid.classList.add('grid-cols-1');
+    grid.classList.remove('md:grid-cols-2', 'lg:grid-cols-3');
+    listViewBtn.classList.add('bg-blue-100', 'text-blue-800');
+    listViewBtn.classList.remove('text-gray-400');
+    gridViewBtn.classList.remove('bg-blue-100', 'text-blue-800');
+    gridViewBtn.classList.add('text-gray-400');
+  });
+});
+</script>
+
+<script>
+let originalOrder = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+  const airfoilGrid = document.getElementById('airfoilGrid');
+  if (airfoilGrid) {
+    originalOrder = Array.from(airfoilGrid.children).map(card => card.getAttribute('data-id'));
+  }
+  const sortSelect = document.getElementById('sortSelect');
+  if (sortSelect) {
+    populateDataAttributes();
+    sortSelect.addEventListener('change', handleSort);
+    handleSort();
+  }
+});
+
+function populateDataAttributes() {
+  document.querySelectorAll('.airfoil-card').forEach(card => {
+    const rows = card.querySelectorAll('tr, .stat-row');
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      if (text.includes('camber')) {
+        const camberValue = extractNumberFromText(text);
+        if (camberValue !== null) {
+          card.setAttribute('data-camber', camberValue);
+        }
+      }
+      if (text.includes('thickness')) {
+        const thicknessValue = extractNumberFromText(text);
+        if (thicknessValue !== null) {
+          card.setAttribute('data-thickness', thicknessValue);
+        }
+      }
+    });
+    try {
+      const camberEl = card.querySelector('.camber-value, [data-stat="camber"]');
+      const thicknessEl = card.querySelector('.thickness-value, [data-stat="thickness"]');
+      if (camberEl && !card.hasAttribute('data-camber')) {
+        card.setAttribute('data-camber', parseFloat(camberEl.textContent) || 0);
+      }
+      if (thicknessEl && !card.hasAttribute('data-thickness')) {
+        card.setAttribute('data-thickness', parseFloat(thicknessEl.textContent) || 0);
+      }
+    } catch (e) {
+      console.error('Error setting data attributes:', e);
+    }
+    if (!card.hasAttribute('data-camber') || !card.hasAttribute('data-thickness')) {
+      const descriptionEl = card.querySelector('p, .description');
+      const description = descriptionEl ? descriptionEl.textContent : '';
+      if (!card.hasAttribute('data-camber')) {
+        const camberMatch = description.match(/(\d+(?:\.\d+)?)%?\s*camber/i);
+        if (camberMatch) {
+          card.setAttribute('data-camber', parseFloat(camberMatch[1]));
+        } else {
+          card.setAttribute('data-camber', '0');
+        }
+      }
+      if (!card.hasAttribute('data-thickness')) {
+        const thicknessMatch = description.match(/(\d+(?:\.\d+)?)%?\s*thickness/i);
+        if (thicknessMatch) {
+          card.setAttribute('data-thickness', parseFloat(thicknessMatch[1]));
+        } else {
+          card.setAttribute('data-thickness', '0');
+        }
+      }
+    }
+    if (!card.hasAttribute('data-name')) {
+      const nameEl = card.querySelector('h3, .airfoil-name');
+      if (nameEl) {
+        card.setAttribute('data-name', nameEl.textContent.trim());
+      }
+    }
+    console.log(`Card ${card.getAttribute('data-name')}: camber=${card.getAttribute('data-camber')}, thickness=${card.getAttribute('data-thickness')}`);
+  });
+}
+function extractNumberFromText(text) {
+  const match = text.match(/(\d+(?:\.\d+)?)/);
+  return match ? parseFloat(match[1]) : null;
+}
+function handleSort() {
+  const sortSelect = document.getElementById('sortSelect');
+  if (!sortSelect) return;
+  const sortValue = sortSelect.value;
+  const airfoilGrid = document.getElementById('airfoilGrid');
+  const airfoilElements = Array.from(document.querySelectorAll('.airfoil-card'));
+  if (!airfoilGrid || airfoilElements.length === 0) return;
+  console.log(`Sorting by: ${sortValue}`);
+  if (sortValue === 'popular' || sortValue === 'Sort by: Popular') {
+    // Restore original order
+    airfoilGrid.innerHTML = '';
+    originalOrder.forEach(id => {
+      const card = airfoilElements.find(el => el.getAttribute('data-id') === id);
+      if (card) airfoilGrid.appendChild(card);
+    });
+    return;
+  }
+  airfoilElements.sort((a, b) => {
+    try {
+      switch (sortValue) {
+        case 'nameAtoZ':
+        case 'Name (A to Z)':
+          return (a.getAttribute('data-name') || '').localeCompare(b.getAttribute('data-name') || '');
+        case 'nameZtoA':
+        case 'Name (Z to A)':
+          return (b.getAttribute('data-name') || '').localeCompare(a.getAttribute('data-name') || '');
+        case 'camberLowToHigh':
+        case 'Camber (low to high)':
+          return parseFloat(a.getAttribute('data-camber') || 0) - parseFloat(b.getAttribute('data-camber') || 0);
+        case 'camberHighToLow':
+        case 'Camber (high to low)':
+          return parseFloat(b.getAttribute('data-camber') || 0) - parseFloat(a.getAttribute('data-camber') || 0);
+        case 'thicknessLowToHigh':
+        case 'Thickness (low to high)':
+          return parseFloat(a.getAttribute('data-thickness') || 0) - parseFloat(b.getAttribute('data-thickness') || 0);
+        case 'thicknessHighToLow':
+        case 'Thickness (high to low)':
+          return parseFloat(b.getAttribute('data-thickness') || 0) - parseFloat(a.getAttribute('data-thickness') || 0);
+        case 'popular':
+        case 'Sort by: Popular':
+        default:
+          return 0;
+      }
+    } catch (e) {
+      console.error('Error during sorting:', e);
+      return 0;
+    }
+  });
+  airfoilGrid.innerHTML = '';
+  airfoilElements.forEach(element => {
+    airfoilGrid.appendChild(element);
+  });
+}
 </script>
