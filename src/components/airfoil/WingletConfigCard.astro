@@ -1,20 +1,21 @@
 ---
 export interface Props {
-  airfoilName: string;
+  airfoil: any;
 }
 
-const { airfoilName } = Astro.props;
+const { airfoil } = Astro.props;
 ---
 
-<div class="bg-white rounded-lg shadow-sm mb-6">
+<div class="bg-white rounded-lg shadow-sm mb-6" id="wingletConfigRoot" data-airfoil-name="{airfoil.name}">
   <div class="p-4 border-b border-gray-200">
     <h2 class="text-lg font-medium text-gray-900">Winglet Configuration</h2>
   </div>
   
-  <div class="p-4">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Winglet Visualization -->
-      <div>
+  <div class="p-4 w-full min-w-0 max-w-full">
+    <!-- Two-column grid for preview/parameters -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full min-w-0 max-w-full">
+      <!-- Left column: 3D Preview + Reference Data -->
+      <div class="w-full min-w-0 max-w-full flex flex-col">
         <div class="mb-4">
           <h3 class="text-sm font-medium text-gray-700 mb-2">Winglet Preview</h3>
           <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 h-80 relative">
@@ -55,10 +56,45 @@ const { airfoilName } = Astro.props;
             </div>
           </div>
         </div>
+        <!-- Reference Data Panel (directly under preview, same width) -->
+        <div class="mt-4">
+          <h3 class="text-sm font-bold text-blue-900 mb-2">Reference Data</h3>
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <dl class="space-y-2">
+              <div class="flex justify-between">
+                <dt class="text-xs text-gray-500">Airfoil Name:</dt>
+                <dd class="text-sm font-medium text-gray-900">{airfoil.name || <span class='text-red-600'>Missing: name</span>}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-xs text-gray-500">Maximum Thickness (%):</dt>
+                <dd class="text-sm font-medium text-gray-900">{typeof airfoil.thickness !== 'undefined' ? airfoil.thickness + '%' : <span class='text-red-600'>Missing: thickness</span>}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-xs text-gray-500">Maximum Camber (% @ pos):</dt>
+                <dd class="text-sm font-medium text-gray-900">{typeof airfoil.camber !== 'undefined' && typeof airfoil.maxCamberPosition !== 'undefined' ? `${airfoil.camber}% @ ${airfoil.maxCamberPosition}%` : <span class='text-red-600'>Missing: camber or maxCamberPosition</span>}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-xs text-gray-500">Zero-lift Drag Coefficient, CD₀:</dt>
+                <dd class="text-sm font-medium text-gray-900">{typeof airfoil.cd0 !== 'undefined' ? airfoil.cd0 : <span class='text-red-600'>Missing: cd0</span>}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-xs text-gray-500">Oswald Efficiency Factor (e):</dt>
+                <dd class="text-sm font-medium text-gray-900">{typeof airfoil.oswaldEfficiency !== 'undefined' ? airfoil.oswaldEfficiency : <span class='text-red-600'>Missing: oswaldEfficiency</span>}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-xs text-gray-500">Assumed Cruise Lift Coefficient, CL:</dt>
+                <dd class="text-sm font-medium text-gray-900">{typeof airfoil.cl !== 'undefined' ? airfoil.cl : <span class='text-red-600'>Missing: cl</span>}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-xs text-gray-500">Source/Citation:</dt>
+                <dd class="text-xs text-gray-500 font-normal ml-2">{airfoil.source || <span class='text-red-600'>Missing: source</span>}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
       </div>
-      
-      <!-- Winglet Controls -->
-      <div>
+      <!-- Right column: Winglet Parameters -->
+      <div class="w-full min-w-0 max-w-full">
         <h3 class="text-sm font-medium text-gray-700 mb-3">Winglet Parameters</h3>
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
           <!-- Winglet type -->
@@ -70,16 +106,13 @@ const { airfoilName } = Astro.props;
               id="wingletType" 
               class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             >
-              <option value="single">Standard Winglet</option>
-              <option value="split" selected>Split Scimitar Winglet</option>
-              <option value="blended">Blended Winglet</option>
-              <option value="raked">Raked Winglet</option>
-              <option value="sharklet">Sharklet</option>
+              <!-- Options will be populated by JS -->
             </select>
+            <div id="wingletTypeDescription" class="text-xs text-gray-600 mt-2"></div>
           </div>
           
           <!-- Main winglet angle -->
-          <div>
+          <div id="angleControl">
             <label for="wingletAngle" class="block text-sm font-medium text-gray-700 mb-1">
               Winglet Angle (degrees)
             </label>
@@ -89,15 +122,15 @@ const { airfoilName } = Astro.props;
                 id="wingletAngle" 
                 min="-90" 
                 max="90" 
-                value="75" 
                 class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                title="Enable a winglet type to adjust this parameter."
               />
               <span id="wingletAngleValue" class="ml-3 w-12 text-center">75°</span>
             </div>
           </div>
           
           <!-- Secondary winglet angle (for split scimitar) -->
-          <div>
+          <div id="secondaryAngleControl">
             <label for="secondaryWingletAngle" class="block text-sm font-medium text-gray-700 mb-1">
               Secondary Winglet Angle (degrees)
             </label>
@@ -107,15 +140,15 @@ const { airfoilName } = Astro.props;
                 id="secondaryWingletAngle" 
                 min="0" 
                 max="90" 
-                value="60"
                 class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                title="Enable a winglet type to adjust this parameter."
               />
               <span id="secondaryWingletAngleValue" class="ml-3 w-12 text-center">60°</span>
             </div>
           </div>
           
           <!-- Winglet height -->
-          <div>
+          <div id="heightControl">
             <label for="wingletHeight" class="block text-sm font-medium text-gray-700 mb-1">
               Winglet Height (% wingspan)
             </label>
@@ -125,15 +158,15 @@ const { airfoilName } = Astro.props;
                 id="wingletHeight" 
                 min="1" 
                 max="15" 
-                value="8" 
                 class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                title="Enable a winglet type to adjust this parameter."
               />
               <span id="wingletHeightValue" class="ml-3 w-12 text-center">8%</span>
             </div>
           </div>
           
           <!-- Toe angle (advanced option) -->
-          <div>
+          <div id="toeControl">
             <label for="toeAngle" class="block text-sm font-medium text-gray-700 mb-1">
               Toe Angle (degrees)
             </label>
@@ -143,10 +176,83 @@ const { airfoilName } = Astro.props;
                 id="toeAngle" 
                 min="-10" 
                 max="10" 
-                value="2" 
                 class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                title="Enable a winglet type to adjust this parameter."
               />
               <span id="toeAngleValue" class="ml-3 w-12 text-center">2°</span>
+            </div>
+          </div>
+          
+          <!-- Aircraft Parameters -->
+          <div class="space-y-4">
+            <!-- Wingspan -->
+            <div>
+              <label for="wingspan" class="block text-sm font-medium text-gray-700 mb-1">
+                Wingspan (m)
+              </label>
+              <input 
+                type="number" 
+                id="wingspan" 
+                step="0.1" 
+                min="0.1" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <!-- Wing Area -->
+            <div>
+              <label for="wingArea" class="block text-sm font-medium text-gray-700 mb-1">
+                Wing Area (m²)
+              </label>
+              <input 
+                type="number" 
+                id="wingArea" 
+                step="0.1" 
+                min="0.1" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <!-- Flight Speed -->
+            <div>
+              <label for="flightSpeed" class="block text-sm font-medium text-gray-700 mb-1">
+                Flight Speed (m/s)
+              </label>
+              <input 
+                type="number" 
+                id="flightSpeed" 
+                step="0.1" 
+                min="0.1" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <!-- Aircraft Weight -->
+            <div>
+              <label for="aircraftWeight" class="block text-sm font-medium text-gray-700 mb-1">
+                Aircraft Weight (kg)
+              </label>
+              <input 
+                type="number" 
+                id="aircraftWeight" 
+                step="1" 
+                min="1" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <!-- Air Density -->
+            <div>
+              <label for="airDensity" class="block text-sm font-medium text-gray-700 mb-1">
+                Air Density (kg/m³)
+              </label>
+              <input 
+                type="number" 
+                id="airDensity" 
+                step="0.001" 
+                min="0.1" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
           </div>
           
@@ -177,9 +283,10 @@ const { airfoilName } = Astro.props;
             </div>
           </div>
           
-          <div class="mt-4 pt-4 border-t border-gray-200">
-            <button id="updateWinglet" class="w-full bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700">
-              Update Winglet
+          <!-- Reset to Airfoil Defaults Button -->
+          <div class="mt-2">
+            <button id="resetDefaults" class="w-full bg-gray-200 text-gray-800 py-2 rounded text-sm font-medium hover:bg-gray-300 mb-2">
+              Reset to Airfoil Defaults
             </button>
           </div>
         </div>
@@ -210,104 +317,642 @@ const { airfoilName } = Astro.props;
         </div>
       </div>
     </div>
+
+    <!-- Compare Configurations -->
+    <div class="mt-6">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-sm font-medium text-gray-700">Compare Configurations</h3>
+        <div class="flex gap-2">
+          <button 
+            id="exportConfigs" 
+            class="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 flex items-center"
+            title="Export configurations to CSV"
+          >
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Export
+          </button>
+          <button 
+            id="saveConfig" 
+            class="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 flex items-center"
+          >
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Save Configuration
+          </button>
+        </div>
+      </div>
+      
+      <div id="configList" class="config-card bg-gray-50 border border-gray-200 rounded-lg p-4 w-full max-w-full min-w-0">
+        <div id="noConfigs" class="text-center text-gray-500 py-4">
+          Save configurations here to compare winglet setups.
+        </div>
+        <div id="configCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Cards will be rendered here by JS -->
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-  // Simple UI updates for sliders
-  document.addEventListener('DOMContentLoaded', function() {
-    // Update angle display when sliders change
-    document.getElementById('wingletAngle').addEventListener('input', function() {
-      document.getElementById('wingletAngleValue').textContent = this.value + '°';
-    });
-    
-    document.getElementById('secondaryWingletAngle').addEventListener('input', function() {
-      document.getElementById('secondaryWingletAngleValue').textContent = this.value + '°';
-    });
-    
-    document.getElementById('wingletHeight').addEventListener('input', function() {
-      document.getElementById('wingletHeightValue').textContent = this.value + '%';
-    });
-    
-    document.getElementById('toeAngle').addEventListener('input', function() {
-      document.getElementById('toeAngleValue').textContent = this.value + '°';
-    });
-    
-    // Show/hide secondary winglet angle based on selection
-    document.getElementById('wingletType').addEventListener('change', function() {
-      var secondaryAngleDiv = document.getElementById('secondaryWingletAngle').parentElement.parentElement;
-      if (this.value === 'split') {
-        secondaryAngleDiv.style.opacity = '1';
-        document.getElementById('secondaryWingletAngle').disabled = false;
-      } else {
-        secondaryAngleDiv.style.opacity = '0.5';
-        document.getElementById('secondaryWingletAngle').disabled = true;
-      }
-    });
-    
-    // Button click simulation
-    document.getElementById('updateWinglet').addEventListener('click', function() {
-      this.textContent = 'Updated!';
-      setTimeout(() => {
-        this.textContent = 'Update Winglet';
-      }, 1500);
-      
-      // Update performance metrics
-      updatePerformanceImpact();
-    });
-    
-    // Update performance metrics randomly to simulate changes
-    function updatePerformanceImpact() {
-      // Get current parameter values
-      var type = document.getElementById('wingletType').value;
-      var angle = parseInt(document.getElementById('wingletAngle').value);
-      var height = parseInt(document.getElementById('wingletHeight').value);
-      
-      // Base factors
-      var typeFactor = 1.0;
-      switch (type) {
-        case 'split': typeFactor = 1.5; break;
-        case 'blended': typeFactor = 1.3; break;
-        case 'sharklet': typeFactor = 1.28; break;
-        case 'raked': typeFactor = 1.15; break;
-        default: typeFactor = 1.0;
-      }
-      
-      // Optimal angle is 75°
-      var angleFactor = 1 - Math.abs(Math.abs(angle) - 75) / 75;
-      
-      // Height factor (3-8% wingspan is optimal)
-      var heightFactor = Math.min(height / 6, 1.8);
-      
-      // Combined effect
-      var totalFactor = typeFactor * angleFactor * heightFactor;
-      
-      // Add some randomization
-      var randomFactor = 0.95 + Math.random() * 0.1;
-      
-      // Update display
-      document.getElementById('dragReduction').textContent = 
-        (totalFactor * 5.2 * randomFactor).toFixed(1) + '%';
-      document.getElementById('efficiencyGain').textContent = 
-        (totalFactor * 3.8 * randomFactor).toFixed(1) + '%';
-      document.getElementById('rangeIncrease').textContent = 
-        (totalFactor * 5.5 * randomFactor).toFixed(1) + '%';
-      document.getElementById('fuelSavings').textContent = 
-        (totalFactor * 3.2 * randomFactor).toFixed(1) + '%';
+console.log('WingletConfigCard script loaded');
+
+// Central data structure for winglet types
+const wingletTypes = [
+  {
+    value: 'none',
+    label: 'No Winglet',
+    description: 'No winglet or tip device installed.',
+    parameters: []
+  },
+  {
+    value: 'hoerner',
+    label: 'Hoerner Tip',
+    description: 'Angled cutoff, common on gliders.',
+    parameters: []
+  },
+  {
+    value: 'fence',
+    label: 'Wing Fence',
+    description: 'Vertical plate to prevent spanwise flow, used on MiG-15.',
+    parameters: []
+  },
+  {
+    value: 'single',
+    label: 'Standard Winglet',
+    description: 'Conventional upward winglet, reduces induced drag.',
+    parameters: ['angle', 'height', 'toe']
+  },
+  {
+    value: 'split',
+    label: 'Split Scimitar Winglet',
+    description: 'Advanced split tip, used on modern Boeings.',
+    parameters: ['angle', 'secondaryAngle', 'height', 'toe']
+  },
+  {
+    value: 'blended',
+    label: 'Blended Winglet',
+    description: 'Smooth transition, used on most modern Boeings.',
+    parameters: ['angle', 'height', 'toe']
+  },
+  {
+    value: 'raked',
+    label: 'Raked Winglet',
+    description: 'Extended tip, swept back for efficiency.',
+    parameters: ['angle', 'height']
+  },
+  {
+    value: 'sharklet',
+    label: 'Sharklet',
+    description: 'Distinctive Airbus A320 tip.',
+    parameters: ['angle', 'height']
+  }
+];
+
+let selectedType = 'none';
+let wingletAngle = 75;
+let secondaryWingletAngle = 60;
+let wingletHeight = 8;
+let toeAngle = 2;
+
+// Add new variables for aircraft parameters
+let wingspan = 10.0;
+let wingArea = 14.5;
+let flightSpeed = 50.0;
+let aircraftWeight = 1200.0;
+let airDensity = 1.225;
+
+// Track user modifications
+let userModifiedFields = {
+  wingspan: false,
+  wingArea: false,
+  flightSpeed: false,
+  aircraftWeight: false,
+  airDensity: false
+};
+
+function showError(message) {
+  const panel = document.getElementById('wingletParametersPanel');
+  if (panel) {
+    panel.innerHTML = `<div class='flex items-center justify-center h-32 text-red-600'>${message}</div>`;
+  }
+}
+
+function showLoading() {
+  const panel = document.getElementById('wingletParametersPanel');
+  if (panel) {
+    panel.innerHTML = `<div class='flex items-center justify-center h-32'><svg class='animate-spin h-6 w-6 text-gray-400 mr-2' fill='none' viewBox='0 0 24 24'><circle class='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' stroke-width='4'></circle><path class='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8v8z'></path></svg>Loading airfoil data...</div>`;
+  }
+}
+
+function updateUI() {
+  // Always set slider values and disabled state at the top
+  const showWingletControls = selectedType !== 'none';
+  const valueMap = {
+    wingletAngle,
+    secondaryWingletAngle,
+    wingletHeight,
+    toeAngle
+  };
+  ['wingletAngle', 'secondaryWingletAngle', 'wingletHeight', 'toeAngle'].forEach(id => {
+    const slider = document.getElementById(id);
+    if (slider) {
+      slider.value = valueMap[id];
+      slider.disabled = !showWingletControls;
     }
+  });
+  console.log('BEFORE SET');
+  console.log(
+    'AFTER SET:',
+    'wingletAngle', document.getElementById('wingletAngle').disabled,
+    'secondaryWingletAngle', document.getElementById('secondaryWingletAngle').disabled,
+    'wingletHeight', document.getElementById('wingletHeight').disabled,
+    'toeAngle', document.getElementById('toeAngle').disabled
+  );
+  console.log('AFTER LOG');
+
+  // Defensive: check airfoilData and airfoilName
+  const airfoilName = document.getElementById('wingletConfigRoot').dataset.airfoilName;
+  const typeObj = wingletTypes.find(t => t.value === selectedType);
+  console.log(
+    'Setting secondaryAngleControl display to',
+    typeObj.parameters.includes('secondaryAngle') ? '' : 'none',
+    'for selectedType:', selectedType
+  );
+  document.getElementById('secondaryAngleControl').style.display = typeObj.parameters.includes('secondaryAngle') ? '' : 'none';
+
+  if (!window.airfoilData) {
+    showLoading();
+    return;
+  }
+  if (!window.airfoilData[airfoilName]) {
+    showError('Airfoil data not found. Please select a valid airfoil.');
+    return;
+  }
+  const airfoilDataEntry = window.airfoilData[airfoilName];
+  document.getElementById('wingletTypeDescription').textContent = typeObj ? typeObj.description : '';
+
+  // Show/hide or disable winglet-specific controls
+  document.getElementById('angleControl').style.display = '';
+  document.getElementById('heightControl').style.display = '';
+  document.getElementById('toeControl').style.display = '';
+
+  // Optionally gray out the labels
+  document.querySelector('label[for="wingletAngle"]').classList.toggle('text-gray-400', !showWingletControls);
+  document.querySelector('label[for="secondaryWingletAngle"]').classList.toggle('text-gray-400', !showWingletControls);
+  document.querySelector('label[for="wingletHeight"]').classList.toggle('text-gray-400', !showWingletControls);
+  document.querySelector('label[for="toeAngle"]').classList.toggle('text-gray-400', !showWingletControls);
+
+  // If 'No Winglet', reset all values for hidden controls
+  if (!showWingletControls) {
+    wingletAngle = 0;
+    secondaryWingletAngle = 0;
+    wingletHeight = 0;
+    toeAngle = 0;
+  }
+
+  // Update aircraft parameter fields with values from airfoil data
+  if (airfoilDataEntry) {
+    if (!userModifiedFields.wingspan) {
+      wingspan = typeof airfoilDataEntry.defaultWingspan === 'number' ? airfoilDataEntry.defaultWingspan : 10.0;
+      document.getElementById('wingspan').value = wingspan;
+    }
+    if (!userModifiedFields.wingArea) {
+      wingArea = typeof airfoilDataEntry.defaultWingArea === 'number' ? airfoilDataEntry.defaultWingArea : 14.5;
+      document.getElementById('wingArea').value = wingArea;
+    }
+    if (!userModifiedFields.flightSpeed) {
+      flightSpeed = typeof airfoilDataEntry.defaultFlightSpeed === 'number' ? airfoilDataEntry.defaultFlightSpeed : 50.0;
+      document.getElementById('flightSpeed').value = flightSpeed;
+    }
+    if (!userModifiedFields.aircraftWeight) {
+      aircraftWeight = typeof airfoilDataEntry.defaultWeight === 'number' ? airfoilDataEntry.defaultWeight : 1200.0;
+      document.getElementById('aircraftWeight').value = aircraftWeight;
+    }
+    if (!userModifiedFields.airDensity) {
+      airDensity = typeof airfoilDataEntry.defaultAirDensity === 'number' ? airfoilDataEntry.defaultAirDensity : 1.225;
+      document.getElementById('airDensity').value = airDensity;
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Populate dropdown
+  const select = document.getElementById('wingletType');
+  select.innerHTML = '';
+  wingletTypes.forEach(type => {
+    const opt = document.createElement('option');
+    opt.value = type.value;
+    opt.textContent = type.label;
+    select.appendChild(opt);
+  });
+  select.value = selectedType;
+  updateUI();
+  select.addEventListener('change', function() {
+    selectedType = this.value;
+    console.log('Dropdown changed, selectedType =', selectedType);
+    updateUI();
+  });
+  // Sliders update
+  document.getElementById('wingletAngle').addEventListener('input', function() {
+    if (this.disabled) return;
+    wingletAngle = parseInt(this.value);
+    document.getElementById('wingletAngleValue').textContent = this.value + '°';
+  });
+  document.getElementById('secondaryWingletAngle').addEventListener('input', function() {
+    if (this.disabled) return;
+    secondaryWingletAngle = parseInt(this.value);
+    document.getElementById('secondaryWingletAngleValue').textContent = this.value + '°';
+  });
+  document.getElementById('wingletHeight').addEventListener('input', function() {
+    if (this.disabled) return;
+    wingletHeight = parseInt(this.value);
+    document.getElementById('wingletHeightValue').textContent = this.value + '%';
+  });
+  document.getElementById('toeAngle').addEventListener('input', function() {
+    if (this.disabled) return;
+    toeAngle = parseInt(this.value);
+    document.getElementById('toeAngleValue').textContent = this.value + '°';
+  });
+  updateUI();
+
+  // Add event listeners for aircraft parameter inputs
+  document.getElementById('wingspan').addEventListener('input', function() {
+    wingspan = parseFloat(this.value);
+    userModifiedFields.wingspan = true;
+  });
+  document.getElementById('wingArea').addEventListener('input', function() {
+    wingArea = parseFloat(this.value);
+    userModifiedFields.wingArea = true;
+  });
+  document.getElementById('flightSpeed').addEventListener('input', function() {
+    flightSpeed = parseFloat(this.value);
+    userModifiedFields.flightSpeed = true;
+  });
+  document.getElementById('aircraftWeight').addEventListener('input', function() {
+    aircraftWeight = parseFloat(this.value);
+    userModifiedFields.aircraftWeight = true;
+  });
+  document.getElementById('airDensity').addEventListener('input', function() {
+    airDensity = parseFloat(this.value);
+    userModifiedFields.airDensity = true;
+  });
+
+  // Add event listener for airfoil changes from the main UI
+  window.addEventListener('airfoilChanged', function(event) {
+    // Reset user modification tracking when airfoil changes
+    userModifiedFields = {
+      wingspan: false,
+      wingArea: false,
+      flightSpeed: false,
+      aircraftWeight: false,
+      airDensity: false
+    };
+    updateUI();
+  });
+
+  // Configuration management
+  let savedConfigs = [];
+  const STORAGE_KEY = 'winglet_configs_';
+
+  // Example configurations for development/demo
+  const exampleConfigs = [
+    {
+      id: 1,
+      name: 'Split Scimitar - Baseline',
+      type: 'split',
+      parameters: {
+        angle: 75,
+        secondaryAngle: 60,
+        height: 8,
+        toe: 2
+      },
+      performance: {
+        drag: '4.8%',
+        efficiency: '3.2%',
+        range: '5.1%',
+        fuel: '2.9%'
+      },
+      isBaseline: true
+    },
+    {
+      id: 2,
+      name: 'Blended Winglet - High Efficiency',
+      type: 'blended',
+      parameters: {
+        angle: 65,
+        height: 10,
+        toe: 3
+      },
+      performance: {
+        drag: '3.9%',
+        efficiency: '3.8%',
+        range: '4.5%',
+        fuel: '2.7%'
+      },
+      isBaseline: false
+    },
+    {
+      id: 3,
+      name: 'Standard Winglet - Compact',
+      type: 'single',
+      parameters: {
+        angle: 70,
+        height: 6,
+        toe: 1
+      },
+      performance: {
+        drag: '2.8%',
+        efficiency: '2.5%',
+        range: '3.2%',
+        fuel: '1.9%'
+      },
+      isBaseline: false
+    }
+  ];
+
+  function getStorageKey(airfoilName) {
+    return STORAGE_KEY + airfoilName;
+  }
+
+  function loadConfigs(airfoilName) {
+    const stored = localStorage.getItem(getStorageKey(airfoilName));
+    if (stored) {
+      savedConfigs = JSON.parse(stored);
+    } else {
+      savedConfigs = [...exampleConfigs];
+      localStorage.setItem(getStorageKey(airfoilName), JSON.stringify(savedConfigs));
+    }
+    updateConfigTable(airfoilName);
+  }
+
+  function saveConfig(airfoilName) {
+    const typeObj = wingletTypes.find(t => t.value === selectedType);
+    const config = {
+      id: Date.now(),
+      name: `${typeObj.label} - ${new Date().toLocaleString()}`,
+      type: selectedType,
+      parameters: {
+        angle: wingletAngle,
+        secondaryAngle: secondaryWingletAngle,
+        height: wingletHeight,
+        toe: toeAngle
+      },
+      performance: {
+        drag: document.getElementById('dragReduction').textContent,
+        efficiency: document.getElementById('efficiencyGain').textContent,
+        range: document.getElementById('rangeIncrease').textContent,
+        fuel: document.getElementById('fuelSavings').textContent
+      },
+      isBaseline: savedConfigs.length === 0
+    };
     
-    // Run once to set initial state of secondary angle visibility
-    document.getElementById('wingletType').dispatchEvent(new Event('change'));
-    
-    // Add event listeners to inputs for live updates
-    document.querySelectorAll('#wingletType, #wingletAngle, #wingletHeight, #toeAngle, #secondaryWingletAngle, #showFlow, #showWireframe')
-      .forEach(input => {
-        input.addEventListener('change', updatePerformanceImpact);
-        if (input.type === 'range') {
-          input.addEventListener('input', updatePerformanceImpact);
+    savedConfigs.push(config);
+    localStorage.setItem(getStorageKey(airfoilName), JSON.stringify(savedConfigs));
+    updateConfigTable(airfoilName);
+  }
+
+  function deleteConfig(id, airfoilName) {
+    savedConfigs = savedConfigs.filter(c => c.id !== id);
+    if (savedConfigs.length > 0 && !savedConfigs.some(c => c.isBaseline)) {
+      savedConfigs[0].isBaseline = true;
+    }
+    localStorage.setItem(getStorageKey(airfoilName), JSON.stringify(savedConfigs));
+    updateConfigTable(airfoilName);
+  }
+
+  function setBaseline(id, airfoilName) {
+    savedConfigs.forEach(c => c.isBaseline = c.id === id);
+    localStorage.setItem(getStorageKey(airfoilName), JSON.stringify(savedConfigs));
+    updateConfigTable(airfoilName);
+  }
+
+  function editConfigName(id, newName, airfoilName) {
+    const config = savedConfigs.find(c => c.id === id);
+    if (config) {
+      config.name = newName;
+      localStorage.setItem(getStorageKey(airfoilName), JSON.stringify(savedConfigs));
+      updateConfigTable(airfoilName);
+    }
+  }
+
+  function updateConfigTable(airfoilName) {
+    const noConfigs = document.getElementById('noConfigs');
+    const cards = document.getElementById('configCards');
+    if (savedConfigs.length === 0) {
+      noConfigs.classList.remove('hidden');
+      cards.innerHTML = '';
+      return;
+    }
+    noConfigs.classList.add('hidden');
+    cards.innerHTML = savedConfigs.map((config, idx) => `
+      <div class="config-card-item rounded-lg border border-gray-200 bg-white shadow-sm p-3 flex flex-col space-y-2 ${config.isBaseline ? 'ring-2 ring-blue-400' : ''}"
+        draggable="true" data-idx="${idx}">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="cursor-move drag-handle text-gray-400 hover:text-gray-600" title="Drag to reorder">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><circle cx="12" cy="6" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="18" r="1.5"/><circle cx="18" cy="6" r="1.5"/><circle cx="18" cy="12" r="1.5"/><circle cx="18" cy="18" r="1.5"/></svg>
+            </span>
+            <div class="font-semibold text-gray-900">
+              <span class="config-name">${config.name}</span>
+              ${config.isBaseline ? '<span class="ml-2 text-xs text-blue-600">(Baseline)</span>' : ''}
+            </div>
+          </div>
+          <button 
+            type="button"
+            class="edit-config-btn ml-2 text-gray-400 hover:text-gray-600"
+            title="Edit Name"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+            </svg>
+          </button>
+          <input 
+            type="text" 
+            value="${config.name}"
+            class="config-edit hidden w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            data-id="${config.id}"
+          />
+        </div>
+        <div class="text-xs text-gray-500">${wingletTypes.find(t => t.value === config.type).label}</div>
+        <div class="text-xs text-gray-700">${Object.entries(config.parameters)
+          .filter(([key, value]) => value !== 0)
+          .map(([key, value]) => `${key}: ${value}${key.includes('Angle') ? '°' : '%'}`)
+          .join(', ')}</div>
+        <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm mt-1">
+          <div>Drag: <span class="font-medium">${config.performance.drag}</span></div>
+          <div>Efficiency: <span class="font-medium">${config.performance.efficiency}</span></div>
+          <div>Range: <span class="font-medium">${config.performance.range}</span></div>
+          <div>Fuel: <span class="font-medium">${config.performance.fuel}</span></div>
+        </div>
+        <div class="flex space-x-2 mt-2">
+          ${!config.isBaseline ? `
+            <button 
+              type="button"
+              class="set-baseline-btn text-blue-600 hover:text-blue-800 text-xs flex items-center"
+              data-id="${config.id}"
+              title="Set as Baseline"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span class="ml-1">Baseline</span>
+            </button>
+          ` : ''}
+          <button 
+            type="button"
+            class="delete-config-btn text-red-600 hover:text-red-800 text-xs flex items-center"
+            data-id="${config.id}"
+            title="Delete Configuration"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+            <span class="ml-1">Delete</span>
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    // Drag and drop logic
+    let dragSrcIdx = null;
+    cards.querySelectorAll('.config-card-item').forEach(card => {
+      card.addEventListener('dragstart', function(e) {
+        dragSrcIdx = parseInt(card.getAttribute('data-idx'));
+        card.classList.add('opacity-50');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', function() {
+        dragSrcIdx = null;
+        card.classList.remove('opacity-50');
+      });
+      card.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        card.classList.add('ring-2', 'ring-blue-200');
+      });
+      card.addEventListener('dragleave', function() {
+        card.classList.remove('ring-2', 'ring-blue-200');
+      });
+      card.addEventListener('drop', function(e) {
+        e.preventDefault();
+        card.classList.remove('ring-2', 'ring-blue-200');
+        const dropIdx = parseInt(card.getAttribute('data-idx'));
+        if (dragSrcIdx !== null && dragSrcIdx !== dropIdx) {
+          const moved = savedConfigs.splice(dragSrcIdx, 1)[0];
+          savedConfigs.splice(dropIdx, 0, moved);
+          localStorage.setItem(getStorageKey(airfoilName), JSON.stringify(savedConfigs));
+          updateConfigTable(airfoilName);
         }
       });
+    });
+  }
+
+  // Get airfoilName from data attribute
+  const airfoilName = document.getElementById('wingletConfigRoot').getAttribute('data-airfoil-name');
+  // Load saved configurations
+  loadConfigs(airfoilName);
+  // Add save configuration button handler
+  document.getElementById('saveConfig').addEventListener('click', function() { saveConfig(airfoilName); });
+  // Add export configuration button handler
+  document.getElementById('exportConfigs').addEventListener('click', function() { exportConfigsToCSV(airfoilName); });
+
+  // Event delegation for card actions
+  const cards = document.getElementById('configCards');
+  cards.addEventListener('click', function(e) {
+    // Delete
+    if (e.target.closest('.delete-config-btn')) {
+      const btn = e.target.closest('.delete-config-btn');
+      const id = parseInt(btn.getAttribute('data-id'));
+      deleteConfig(id, airfoilName);
+      return;
+    }
+    // Set Baseline
+    if (e.target.closest('.set-baseline-btn')) {
+      const btn = e.target.closest('.set-baseline-btn');
+      const id = parseInt(btn.getAttribute('data-id'));
+      setBaseline(id, airfoilName);
+      return;
+    }
+    // Edit Name (show input)
+    if (e.target.closest('.edit-config-btn')) {
+      const btn = e.target.closest('.edit-config-btn');
+      const card = btn.closest('.config-card-item');
+      card.querySelector('.config-name').classList.add('hidden');
+      card.querySelector('.config-edit').classList.remove('hidden');
+      card.querySelector('.config-edit').focus();
+      return;
+    }
   });
+  // Handle name input blur/enter
+  cards.addEventListener('blur', function(e) {
+    if (e.target.classList.contains('config-edit')) {
+      const input = e.target;
+      const card = input.closest('.config-card-item');
+      const id = parseInt(input.getAttribute('data-id'));
+      editConfigName(id, input.value, airfoilName);
+      input.classList.add('hidden');
+      card.querySelector('.config-name').classList.remove('hidden');
+    }
+  }, true);
+  cards.addEventListener('keypress', function(e) {
+    if (e.target.classList.contains('config-edit') && e.key === 'Enter') {
+      e.target.blur();
+    }
+  });
+
+  // Export configurations to CSV
+  function exportConfigsToCSV(airfoilName) {
+    if (!savedConfigs.length) return;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const filename = `${airfoilName.replace(/\s+/g, '')}_WingletConfigs_${dateStr}.csv`;
+    // Collect all unique parameter keys and performance keys
+    const paramKeys = Array.from(new Set(savedConfigs.flatMap(cfg => Object.keys(cfg.parameters || {}))));
+    const perfKeys = Array.from(new Set(savedConfigs.flatMap(cfg => Object.keys(cfg.performance || {}))));
+    // CSV header
+    const header = [
+      'Name',
+      'Winglet Type',
+      ...paramKeys.map(k => k.charAt(0).toUpperCase() + k.slice(1)),
+      ...perfKeys.map(k => k.charAt(0).toUpperCase() + k.slice(1)),
+      'Baseline',
+      'Notes'
+    ];
+    // CSV rows
+    const rows = savedConfigs.map(cfg => [
+      '"' + (cfg.name || '') + '"',
+      '"' + (wingletTypes.find(t => t.value === cfg.type)?.label || cfg.type || '') + '"',
+      ...paramKeys.map(k => cfg.parameters && k in cfg.parameters ? '"' + cfg.parameters[k] + '"' : ''),
+      ...perfKeys.map(k => cfg.performance && k in cfg.performance ? '"' + cfg.performance[k] + '"' : ''),
+      cfg.isBaseline ? 'Yes' : 'No',
+      '"' + (cfg.notes || '') + '"'
+    ]);
+    const csv = [header.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Reset to Airfoil Defaults button handler
+  document.getElementById('resetDefaults').addEventListener('click', function() {
+    // Reset user modification tracking
+    userModifiedFields = {
+      wingspan: false,
+      wingArea: false,
+      flightSpeed: false,
+      aircraftWeight: false,
+      airDensity: false
+    };
+    updateUI();
+  });
+});
 </script>
 
 <!-- Load Three.js separately if/when needed -->
@@ -315,3 +960,62 @@ const { airfoilName } = Astro.props;
 <script is:inline src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script is:inline src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 -->
+
+<style>
+@media (max-width: 768px) {
+  .config-card, .config-card-inner, .overflow-x-auto, .config-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  table.config-table {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .config-table th, .config-table td {
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap;
+  }
+  .config-card {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border-radius: 0.5rem;
+    background: #fff;
+  }
+}
+
+input[type=range]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input[type=range]:disabled::-webkit-slider-thumb {
+  background: #d1d5db; /* gray-300 */
+  border: 1px solid #b0b0b0;
+  cursor: not-allowed;
+}
+input[type=range]:disabled::-moz-range-thumb {
+  background: #d1d5db;
+  border: 1px solid #b0b0b0;
+  cursor: not-allowed;
+}
+input[type=range]:disabled::-ms-thumb {
+  background: #d1d5db;
+  border: 1px solid #b0b0b0;
+  cursor: not-allowed;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  background: #3b82f6; /* blue-500 */
+  border: 1px solid #2563eb;
+}
+input[type=range]::-moz-range-thumb {
+  background: #3b82f6;
+  border: 1px solid #2563eb;
+}
+input[type=range]::-ms-thumb {
+  background: #3b82f6;
+  border: 1px solid #2563eb;
+}
+</style>

@@ -36,7 +36,16 @@
     "year": "1932",
     "category": "Low-speed general aviation",
     "applications": ["Light aircraft", "UAVs", "Model aircraft"],
-    "tags": ["Symmetric", "Low Reynolds", "High Lift"]
+    "tags": ["Symmetric", "Low Reynolds", "High Lift"],
+    "cd0": 0.0064,
+    "oswaldEfficiency": 0.85,
+    "cl": 0.4,
+    "source": "Abbott, I.H., and von Doenhoff, A.E., Theory of Wing Sections, Dover Publications, 1959",
+    "defaultWingspan": 10.0,
+    "defaultWingArea": 14.5,
+    "defaultFlightSpeed": 50.0,
+    "defaultWeight": 1200.0,
+    "defaultAirDensity": 1.225
   },
   "naca-4415": {
     "name": "NACA 4415",
@@ -88,7 +97,16 @@
     "year": "1932",
     "category": "High-lift general aviation",
     "applications": ["Light aircraft", "Gliders", "Low-speed UAVs"],
-    "tags": ["High Camber", "Low Reynolds", "High Lift"]
+    "tags": ["High Camber", "Low Reynolds", "High Lift"],
+    "cd0": 0.0062,
+    "oswaldEfficiency": 0.80,
+    "cl": 1.2,
+    "source": "Abbott, I.H. & von Doenhoff, A.E. (1959). Theory of Wing Sections. Dover Publications; UIUC Airfoil Coordinates Database",
+    "defaultWingspan": 10.0,
+    "defaultWingArea": 14.5,
+    "defaultFlightSpeed": 50.0,
+    "defaultWeight": 1200.0,
+    "defaultAirDensity": 1.225
   },
   "clark-y": {
     "name": "Clark Y",
@@ -145,6 +163,15 @@
     "year": "1922",
     "category": "General aviation",
     "applications": ["Light aircraft", "UAVs", "Propellers", "Wind turbines"],
-    "tags": ["Flat Bottom", "Stable", "Easy Construction"]
+    "tags": ["Flat Bottom", "Stable", "Easy Construction"],
+    "cd0": 0.0065,
+    "oswaldEfficiency": 0.79,
+    "cl": 1.1,
+    "source": "Abbott, I.H. & von Doenhoff, A.E. (1959). Theory of Wing Sections. Dover Publications; UIUC Airfoil Coordinates Database",
+    "defaultWingspan": 10.0,
+    "defaultWingArea": 14.5,
+    "defaultFlightSpeed": 50.0,
+    "defaultWeight": 1200.0,
+    "defaultAirDensity": 1.225
   }
 }

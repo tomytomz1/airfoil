@@ -35,9 +35,9 @@ const { airfoil } = Astro.props;
     <StructuralPropertiesCard name={airfoil.name} />
   </div>
 </div>
-<div id="winglets-content" class="airfoil-tab-content">
-  <div class="mt-6">
-    <WingletConfigCard airfoilName={airfoil.name} />
+<div id="winglets-content" class="airfoil-tab-content w-full min-w-0 max-w-full">
+  <div class="mt-6 w-full min-w-0 max-w-full">
+    <WingletConfigCard airfoil={airfoil} />
   </div>
 </div>
 <div id="3d-content" class="airfoil-tab-content">
